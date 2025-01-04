@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.EchoJournal" parent="android:Theme.Material.Light.NoActionBar" />
+    
+    <style name="Theme.EchoJournal.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_color_2</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_mood</item>
+        <item name="postSplashScreenTheme">@style/Theme.EchoJournal</item>
+    </style>
+</resources>
