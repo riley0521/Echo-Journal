@@ -4,6 +4,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 fun formatLocalDateTimeToHourMinute(value: LocalDateTime): String {
     return String.format(Locale.getDefault(), "%02d:%02d", value.hour, value.minute)
@@ -26,4 +28,12 @@ fun getDisplayTextByDate(value: LocalDate): String {
             }
         }
     }
+}
+
+fun formatSecondsToMinSecond(value: Long): String {
+    val totalTimeDuration = value.toDuration(DurationUnit.SECONDS)
+    val minutes = totalTimeDuration.getMinutes()
+    val seconds = totalTimeDuration.getRemainingSeconds()
+
+    return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
 }

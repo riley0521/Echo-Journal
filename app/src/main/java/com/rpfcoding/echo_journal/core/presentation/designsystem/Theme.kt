@@ -13,7 +13,8 @@ private val LightColorScheme = lightColorScheme(
     onSecondaryContainer = OnSecondaryContainer,
     errorContainer = ErrorContainer,
     error = Error,
-    background = SecondaryContainer
+    background = SecondaryContainer,
+    surfaceVariant = SurfaceVariant
 )
 
 @Composable

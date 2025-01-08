@@ -4,6 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,6 +48,9 @@ import com.rpfcoding.echo_journal.core.util.formatLocalDateTimeToHourMinute
 import com.rpfcoding.echo_journal.core.util.getDisplayTextByDate
 import com.rpfcoding.echo_journal.journal.domain.Journal
 import com.rpfcoding.echo_journal.journal.domain.Mood
+import com.rpfcoding.echo_journal.journal.presentation.components.AudioPlayer
+import com.rpfcoding.echo_journal.journal.presentation.components.Topic
+import com.rpfcoding.echo_journal.journal.presentation.util.getMoodColors
 import com.rpfcoding.echo_journal.journal.presentation.util.getResIdByMood
 import java.time.LocalDateTime
 import kotlin.random.Random
@@ -160,6 +165,8 @@ private fun EmptyJournalContent(
     }
 }
 
+// TODO: show more button
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun JournalItem(
     journal: Journal,
@@ -219,17 +226,44 @@ private fun JournalItem(
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Text(
-                    text = formatLocalDateTimeToHourMinute(journal.dateTimeCreated)
+                    text = formatLocalDateTimeToHourMinute(journal.dateTimeCreated),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
-            // TODO: Seekbar
+            Spacer(modifier = Modifier.height(6.dp))
+            AudioPlayer(
+                isPlaying = false,
+                curPlaybackInSeconds = 92,
+                maxPlaybackInSeconds = 184,
+                moodColors = getMoodColors(journal.mood),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = journal.description,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surfaceVariant
             )
+
+            if (journal.topics.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp))
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    journal.topics.forEach { topic ->
+                        Topic(
+                            text = topic
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -241,7 +275,7 @@ private fun JournalListScreenPreview() {
         JournalListScreen(
             state = JournalListState(
                 journals = listOf(
-                    dummyJournal(dateTime = LocalDateTime.now()),
+                    dummyJournal(dateTime = LocalDateTime.now(), topics = setOf("Work", "Conundrums")),
                     dummyJournal(dateTime = LocalDateTime.now()),
                     dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
                     dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
@@ -280,7 +314,7 @@ private fun JournalItemPreview() {
     }
 }
 
-private fun dummyJournal(dateTime: LocalDateTime? = null): Journal {
+private fun dummyJournal(dateTime: LocalDateTime? = null, topics: Set<String> = emptySet()): Journal {
     val randomDays = Random.nextInt(1, 8).toLong()
 
     return Journal(
@@ -289,6 +323,6 @@ private fun dummyJournal(dateTime: LocalDateTime? = null): Journal {
         description = LoremIpsum(69).values.joinToString(" "),
         recordingUri = "",
         dateTimeCreated = dateTime ?: LocalDateTime.now().plusDays(-randomDays),
-        topics = emptySet()
+        topics = topics
     )
 }
