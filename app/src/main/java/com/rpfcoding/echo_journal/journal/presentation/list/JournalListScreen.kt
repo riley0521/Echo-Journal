@@ -38,6 +38,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.CollectionInfo
+import androidx.compose.ui.semantics.collectionInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
@@ -124,13 +128,21 @@ private fun JournalListScreen(
                             modifier = Modifier.padding(top = 28.dp)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        journals.forEachIndexed { index, journal ->
-                            JournalItem(
-                                journal = journal,
-                                index = index,
-                                isLastItem = index == journals.lastIndex,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics {
+                                    this.collectionInfo = CollectionInfo(-1, 1)
+                                }
+                        ) {
+                            journals.forEachIndexed { index, journal ->
+                                JournalItem(
+                                    journal = journal,
+                                    index = index,
+                                    isLastItem = index == journals.lastIndex,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
@@ -237,6 +249,7 @@ private fun JournalItem(
                 curPlaybackInSeconds = 92,
                 maxPlaybackInSeconds = 184,
                 moodColors = getMoodColors(journal.mood),
+                onToggle = {},
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -245,7 +258,11 @@ private fun JournalItem(
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        this.contentDescription = journal.description
+                    },
                 color = MaterialTheme.colorScheme.surfaceVariant
             )
 

@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,6 +53,7 @@ fun AudioPlayer(
     curPlaybackInSeconds: Long,
     maxPlaybackInSeconds: Long,
     moodColors: MoodColors,
+    onToggle: () -> Unit,
     modifier: Modifier = Modifier,
     playerRadius: Dp = 999.dp
 ) {
@@ -63,7 +65,7 @@ fun AudioPlayer(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
-            onClick = {},
+            onClick = onToggle,
             modifier = Modifier
                 .size(32.dp)
                 .shadow(elevation = 8.dp, shape = RoundedCornerShape(playerRadius))
@@ -127,10 +129,16 @@ private fun AudioPlayerPreview() {
             184L
         }
 
-        LaunchedEffect(Unit) {
-            while(curPlaybackInSeconds < maxPlaybackInSeconds) {
-                delay(1000L)
-                curPlaybackInSeconds++
+        var isPlaying by remember {
+            mutableStateOf(false)
+        }
+
+        LaunchedEffect(isPlaying) {
+            if (isPlaying) {
+                while (curPlaybackInSeconds < maxPlaybackInSeconds) {
+                    delay(1000L)
+                    curPlaybackInSeconds++
+                }
             }
         }
 
@@ -140,10 +148,13 @@ private fun AudioPlayerPreview() {
         ) {
             Mood.entries.forEach { mood ->
                 AudioPlayer(
-                    isPlaying = false,
+                    isPlaying = isPlaying,
                     curPlaybackInSeconds = curPlaybackInSeconds,
                     maxPlaybackInSeconds = maxPlaybackInSeconds,
                     moodColors = getMoodColors(mood),
+                    onToggle = {
+                        isPlaying = !isPlaying
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
