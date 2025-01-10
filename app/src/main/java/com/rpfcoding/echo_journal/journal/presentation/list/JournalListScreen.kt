@@ -66,6 +66,7 @@ fun JournalListScreenRoot() {
 
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun JournalListScreen(
     state: JournalListState,
@@ -120,25 +121,36 @@ private fun JournalListScreen(
             }
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
+                    val shouldAddModifier = (state.filteredMoods.getSelectedCount() >= 2 &&
+                            state.filteredTopics.getSelectedCount() >= 3) ||
+                            state.filteredMoods.getSelectedCount() >= 4
+                    val widthModifier = if (shouldAddModifier) {
+                        Modifier.fillMaxWidth()
+                    } else {
+                        Modifier
+                    }
+
                     JournalFilterDropdown(
                         title = "All Moods",
                         filterType = state.filteredMoods,
                         onToggle = { filterType ->
                             onAction(JournalListAction.OnToggleMoodFilter(filterType))
-                        }
+                        },
+                        modifier = widthModifier
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    if (!shouldAddModifier) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
                     JournalFilterDropdown(
                         title = "All Topics",
                         filterType = state.filteredTopics,
                         onToggle = { filterType ->
                             onAction(JournalListAction.OnToggleTopicFilter(filterType))
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }

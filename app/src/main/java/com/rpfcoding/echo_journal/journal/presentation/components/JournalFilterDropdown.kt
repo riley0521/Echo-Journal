@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -71,6 +72,20 @@ sealed interface JournalFilterType {
             is Topics -> topics.size
         }
     }
+
+    fun getSelectedCount(): Int {
+        return when (this) {
+            is Moods -> moods.filter { it.isSelected }.size
+            is Topics -> topics.filter { it.isSelected }.size
+        }
+    }
+
+    fun getSelectedNames(): List<String> {
+        return when (this) {
+            is Moods -> moods.filter { it.isSelected }.map { it.name }
+            is Topics -> topics.filter { it.isSelected }.map { it.name }.sorted()
+        }
+    }
 }
 
 fun getMoodsFilterType(): JournalFilterType.Moods {
@@ -118,8 +133,6 @@ fun <T : JournalFilterType> JournalFilterDropdown(
     Column(
         modifier = modifier
     ) {
-
-
         Box(
             modifier = Modifier
                 .border(width = 1.dp, color = dropdownSelectedBackgroundColor, shape)
@@ -129,43 +142,10 @@ fun <T : JournalFilterType> JournalFilterDropdown(
                 }
                 .animateContentSize()
         ) {
-            val paddingStart = if (filterType is JournalFilterType.Moods && filterType
-                    .moods
-                    .none { it.isSelected } ||
-                filterType is JournalFilterType.Topics
-            ) {
-                12.dp
-            } else {
-                0.dp
-            }
-
-            Row(
-                modifier = Modifier
-                    .padding(vertical = 6.dp)
-                    .padding(start = paddingStart),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (filterType is JournalFilterType.Moods) {
-                    val selectedMoods = filterType.moods.filter { it.isSelected }.toSet()
-
-                    if (selectedMoods.isNotEmpty()) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                    }
-                    MoodImages(
-                        selectedMoods = selectedMoods,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    if (selectedMoods.isNotEmpty()) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                }
-                Text(
-                    text = getTitle(title, filterType),
-                    modifier = Modifier.padding(end = 12.dp),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
+            FilterTitle(
+                title = title,
+                filterType = filterType
+            )
         }
         Spacer(modifier = Modifier.height(8.dp))
         DropdownMenu(
@@ -193,36 +173,9 @@ fun <T : JournalFilterType> JournalFilterDropdown(
             when (filterType) {
                 is JournalFilterType.Moods -> {
                     filterType.moods.forEach { mood ->
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Image(
-                                        painter = painterResource(mood.resId),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = mood.name,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontWeight = FontWeight.Medium
-                                        ),
-                                        color = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    if (mood.isSelected) {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            contentDescription = null
-                                        )
-                                    }
-                                }
-                            },
+                        FilterDropdownItem(
+                            isSelected = mood.isSelected,
+                            itemVerticalPadding = itemVerticalPadding,
                             onClick = {
                                 val updated = JournalFilterType.Moods(
                                     moods = filterType.moods.map {
@@ -233,57 +186,40 @@ fun <T : JournalFilterType> JournalFilterDropdown(
                                 )
                                 onToggle(updated as T)
                             },
-                            contentPadding = PaddingValues(
-                                horizontal = 14.dp,
-                                vertical = itemVerticalPadding
-                            ),
-                            modifier = Modifier
-                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                                .background(
-                                    getSelectedBackgroundColor(mood.isSelected),
-                                    shape = RoundedCornerShape(8.dp)
+                            modifier = Modifier.onGloballyPositioned {
+                                itemHeight = it.size.height
+                            }
+                        ) {
+                            Image(
+                                painter = painterResource(mood.resId),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = mood.name,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (mood.isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    contentDescription = null
                                 )
-                                .onGloballyPositioned {
-                                    itemHeight = it.size.height
-                                }
-                        )
+                            }
+                        }
                     }
                 }
 
                 is JournalFilterType.Topics -> {
                     filterType.topics.forEach { topic ->
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "#",
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                        modifier = Modifier.semantics {
-                                            // For accessibility, we don't want the talkback to read this.
-                                            this.invisibleToUser()
-                                        }
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = topic.name,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                        color = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    if (topic.isSelected) {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            contentDescription = null
-                                        )
-                                    }
-                                }
-                            },
+                        FilterDropdownItem(
+                            isSelected = topic.isSelected,
+                            itemVerticalPadding = itemVerticalPadding,
                             onClick = {
                                 val updated = JournalFilterType.Topics(
                                     topics = filterType.topics.map {
@@ -294,25 +230,116 @@ fun <T : JournalFilterType> JournalFilterDropdown(
                                 )
                                 onToggle(updated as T)
                             },
-                            contentPadding = PaddingValues(
-                                horizontal = 14.dp,
-                                vertical = itemVerticalPadding
-                            ),
-                            modifier = Modifier
-                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                                .background(
-                                    getSelectedBackgroundColor(topic.isSelected),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .onGloballyPositioned {
-                                    itemHeight = it.size.height
+                            modifier = Modifier.onGloballyPositioned {
+                                itemHeight = it.size.height
+                            }
+                        ) {
+                            Text(
+                                text = "#",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                modifier = Modifier.semantics {
+                                    // For accessibility, we don't want the talkback to read this.
+                                    this.invisibleToUser()
                                 }
-                        )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = topic.name,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (topic.isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    contentDescription = null
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun FilterTitle(
+    title: String,
+    filterType: JournalFilterType,
+    modifier: Modifier = Modifier
+) {
+    val paddingStart = if (filterType is JournalFilterType.Moods && filterType
+            .moods
+            .none { it.isSelected } ||
+        filterType is JournalFilterType.Topics
+    ) {
+        12.dp
+    } else {
+        0.dp
+    }
+
+    Row(
+        modifier = modifier
+            .padding(vertical = 6.dp)
+            .padding(start = paddingStart),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (filterType is JournalFilterType.Moods) {
+            val selectedMoods = filterType.moods.filter { it.isSelected }.toSet()
+
+            if (selectedMoods.isNotEmpty()) {
+                Spacer(modifier = Modifier.width(6.dp))
+            }
+            MoodImages(
+                selectedMoods = selectedMoods,
+                modifier = Modifier.size(22.dp)
+            )
+            if (selectedMoods.isNotEmpty()) {
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+        }
+        Text(
+            text = getTitle(title, filterType),
+            modifier = Modifier.padding(end = 12.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+            color = MaterialTheme.colorScheme.secondary
+        )
+    }
+}
+
+@Composable
+private fun FilterDropdownItem(
+    isSelected: Boolean,
+    itemVerticalPadding: Dp,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
+) {
+    DropdownMenuItem(
+        text = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                content()
+            }
+        },
+        onClick = onClick,
+        contentPadding = PaddingValues(
+            horizontal = 14.dp,
+            vertical = itemVerticalPadding
+        ),
+        modifier = modifier
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .background(
+                getSelectedBackgroundColor(isSelected),
+                shape = RoundedCornerShape(8.dp)
+            )
+    )
 }
 
 @Composable
@@ -326,15 +353,7 @@ private fun getSelectedBackgroundColor(isSelected: Boolean): Color {
 
 @Composable
 private fun getTitle(title: String, filterType: JournalFilterType): String {
-    val selectedFilters = when (filterType) {
-        is JournalFilterType.Moods -> {
-            filterType.moods.filter { it.isSelected }.map { it.name }
-        }
-
-        is JournalFilterType.Topics -> {
-            filterType.topics.filter { it.isSelected }.map { it.name }.sorted()
-        }
-    }
+    val selectedFilters = filterType.getSelectedNames()
     val altTitle = buildList {
         addAll(selectedFilters.take(2).map { it }.toTypedArray())
         if (selectedFilters.size > 2) {
