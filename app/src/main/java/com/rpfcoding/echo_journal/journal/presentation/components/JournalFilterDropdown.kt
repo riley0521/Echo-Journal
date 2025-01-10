@@ -1,6 +1,7 @@
 package com.rpfcoding.echo_journal.journal.presentation.components
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -133,14 +135,45 @@ fun <T : JournalFilterType> JournalFilterDropdown(
                 .clickable {
                     expanded = true
                 }
+                .animateContentSize()
         ) {
-            Text(
-                text = title,
+            val paddingStart = if (filterType is JournalFilterType.Moods && filterType
+                    .moods
+                    .none { it.isSelected } ||
+                filterType is JournalFilterType.Topics
+            ) {
+                12.dp
+            } else {
+                0.dp
+            }
+
+            Row(
                 modifier = Modifier
-                    .padding(vertical = 6.dp, horizontal = 12.dp),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.secondary
-            )
+                    .padding(vertical = 6.dp)
+                    .padding(start = paddingStart),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (filterType is JournalFilterType.Moods) {
+                    val selectedMoods = filterType.moods.filter { it.isSelected }.toSet()
+
+                    if (selectedMoods.isNotEmpty()) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    MoodImages(
+                        selectedMoods = selectedMoods,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    if (selectedMoods.isNotEmpty()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                }
+                Text(
+                    text = getTitle(title, filterType),
+                    modifier = Modifier.padding(end = 12.dp),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
         }
         Spacer(modifier = Modifier.height(8.dp))
         DropdownMenu(
@@ -297,6 +330,42 @@ private fun getSelectedBackgroundColor(isSelected: Boolean): Color {
         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.05f)
     } else {
         Color.Transparent
+    }
+}
+
+@Composable
+private fun getTitle(title: String, filterType: JournalFilterType): String {
+    val selectedFilters = when (filterType) {
+        is JournalFilterType.Moods -> {
+            filterType.moods.filter { it.isSelected }.map { it.name }
+        }
+
+        is JournalFilterType.Topics -> {
+            filterType.topics.filter { it.isSelected }.map { it.name }.sorted()
+        }
+    }
+    val altTitle = buildList {
+        addAll(selectedFilters.take(2).map { it }.toTypedArray())
+        if (selectedFilters.size > 2) {
+            add("+${selectedFilters.size - 2}")
+        }
+    }.joinToString(", ")
+
+    return altTitle.ifBlank { title }
+}
+
+@Composable
+private fun MoodImages(
+    selectedMoods: Set<MoodUi>,
+    modifier: Modifier = Modifier
+) {
+    selectedMoods.forEach { mood ->
+        Image(
+            painter = painterResource(mood.resId),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = modifier
+        )
     }
 }
 
