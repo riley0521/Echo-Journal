@@ -45,7 +45,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalTheme
 import com.rpfcoding.echo_journal.journal.domain.Mood
@@ -102,31 +101,24 @@ fun <T : JournalFilterType> JournalFilterDropdown(
             }
         }
     }
-    val offsetWidth = when (filterType) {
-        is JournalFilterType.Moods -> 32.dp
-        is JournalFilterType.Topics -> 16.dp
-        else -> 0.dp
+    val menuWidth = LocalConfiguration.current.screenWidthDp.dp - 32.dp
+
+    val dropdownSelectedBackgroundColor = if (expanded) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        Color(0xffc1c3ce)
     }
-    val offsetX = when (filterType) {
-        is JournalFilterType.Topics -> 16.dp
-        else -> 0.dp
+    val shape = RoundedCornerShape(999.dp)
+    val backgroundModifier = if (expanded) {
+        Modifier.background(Color.White, shape = shape)
+    } else {
+        Modifier.background(Color.Transparent, shape = shape)
     }
-    val menuWidth = LocalConfiguration.current.screenWidthDp.dp - offsetWidth
 
     Column(
         modifier = modifier
     ) {
-        val dropdownSelectedBackgroundColor = if (expanded) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            Color(0xffc1c3ce)
-        }
-        val shape = RoundedCornerShape(999.dp)
-        val backgroundModifier = if (expanded) {
-            Modifier.background(Color.White, shape = shape)
-        } else {
-            Modifier.background(Color.Transparent, shape = shape)
-        }
+
 
         Box(
             modifier = Modifier
@@ -192,7 +184,6 @@ fun <T : JournalFilterType> JournalFilterDropdown(
                     )
                 ),
             expanded = expanded,
-            offset = DpOffset(offsetX, 0.dp),
             onDismissRequest = {
                 expanded = false
             },

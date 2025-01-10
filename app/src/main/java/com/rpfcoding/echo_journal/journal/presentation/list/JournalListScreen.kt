@@ -137,7 +137,8 @@ private fun JournalListScreen(
                         filterType = state.filteredTopics,
                         onToggle = { filterType ->
                             onAction(JournalListAction.OnToggleTopicFilter(filterType))
-                        }
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
