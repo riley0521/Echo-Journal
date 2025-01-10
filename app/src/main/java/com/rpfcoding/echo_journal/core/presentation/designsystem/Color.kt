@@ -9,6 +9,8 @@ val Blue500 = Color(0xff00419c)
 val ErrorContainer = Color(0xffffedec)
 val Error = Color(0xff660014)
 val SurfaceVariant = Color(0xff40434f)
+val Secondary = Color(0xff3b4663)
+val SurfaceContainer = Color(0xff475d92)
 
 val NeutralPrimary = Color(0xff41b278)
 val NeutralSecondary = Color(0xffb9ddcb)

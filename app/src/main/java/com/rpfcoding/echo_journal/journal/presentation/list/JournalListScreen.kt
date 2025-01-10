@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,6 +54,7 @@ import com.rpfcoding.echo_journal.core.util.getDisplayTextByDate
 import com.rpfcoding.echo_journal.journal.domain.Journal
 import com.rpfcoding.echo_journal.journal.domain.Mood
 import com.rpfcoding.echo_journal.journal.presentation.components.AudioPlayer
+import com.rpfcoding.echo_journal.journal.presentation.components.JournalFilterDropdown
 import com.rpfcoding.echo_journal.journal.presentation.components.Topic
 import com.rpfcoding.echo_journal.journal.presentation.util.getMoodColors
 import com.rpfcoding.echo_journal.journal.presentation.util.getResIdByMood
@@ -69,8 +71,13 @@ private fun JournalListScreen(
     state: JournalListState,
     onAction: (JournalListAction) -> Unit
 ) {
+    
+    // TODO: Remove this and dateToJournalsMap, this should be sorted in viewModel
     LaunchedEffect(Unit) {
-        val f = state.journals.groupBy { it.dateTimeCreated.toLocalDate() }.toSortedMap(compareByDescending { it })
+        val f = state
+            .journals
+            .groupBy { it.dateTimeCreated.toLocalDate() }
+            .toSortedMap(compareByDescending { it })
         println(f)
     }
 
@@ -111,6 +118,29 @@ private fun JournalListScreen(
                     style = MaterialTheme.typography.headlineLarge
                 )
             }
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    JournalFilterDropdown(
+                        title = "All Moods",
+                        filterType = state.filteredMoods,
+                        onToggle = { filterType ->
+                            onAction(JournalListAction.OnToggleMoodFilter(filterType))
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    JournalFilterDropdown(
+                        title = "All Topics",
+                        filterType = state.filteredTopics,
+                        onToggle = { filterType ->
+                            onAction(JournalListAction.OnToggleTopicFilter(filterType))
+                        }
+                    )
+                }
+            }
             if (state.journals.isEmpty()) {
                 item {
                     EmptyJournalContent(
@@ -125,7 +155,8 @@ private fun JournalListScreen(
                         Text(
                             text = getDisplayTextByDate(date).uppercase(),
                             style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(top = 28.dp)
+                            modifier = Modifier.padding(top = 28.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Column(
@@ -184,7 +215,8 @@ private fun JournalItem(
     journal: Journal,
     index: Int,
     isLastItem: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onTogglePlayback: (Journal) -> Unit = {}
 ) {
     var height by remember {
         mutableIntStateOf(0)
@@ -244,12 +276,15 @@ private fun JournalItem(
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
+
+            // TODO: Create JournalUi to store the state.
             AudioPlayer(
                 isPlaying = false,
                 curPlaybackInSeconds = 92,
                 maxPlaybackInSeconds = 184,
                 moodColors = getMoodColors(journal.mood),
-                onToggle = {},
+                onToggle = { onTogglePlayback(journal) },
+                onValueChange = {}, // TODO
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -289,17 +324,35 @@ private fun JournalItem(
 @Composable
 private fun JournalListScreenPreview() {
     EchoJournalTheme {
-        JournalListScreen(
-            state = JournalListState(
-                journals = listOf(
-                    dummyJournal(dateTime = LocalDateTime.now(), topics = setOf("Work", "Conundrums")),
-                    dummyJournal(dateTime = LocalDateTime.now()),
-                    dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
-                    dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
-                    dummyJournal(dateTime = LocalDateTime.now().plusDays(-2)),
+        var state by remember {
+            mutableStateOf(
+                JournalListState(
+                    journals = listOf(
+                        dummyJournal(
+                            dateTime = LocalDateTime.now(),
+                            topics = setOf("Work", "Conundrums")
+                        ),
+                        dummyJournal(dateTime = LocalDateTime.now()),
+                        dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
+                        dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
+                        dummyJournal(dateTime = LocalDateTime.now().plusDays(-2)),
+                    )
                 )
-            ),
-            onAction = {}
+            )
+        }
+
+        JournalListScreen(
+            state = state,
+            onAction = { action ->
+                when (action) {
+                    is JournalListAction.OnToggleMoodFilter -> {
+                        state = state.copy(filteredMoods = action.filter)
+                    }
+                    is JournalListAction.OnToggleTopicFilter -> {
+                        state = state.copy(filteredTopics = action.filter)
+                    }
+                }
+            }
         )
     }
 }
@@ -331,7 +384,10 @@ private fun JournalItemPreview() {
     }
 }
 
-private fun dummyJournal(dateTime: LocalDateTime? = null, topics: Set<String> = emptySet()): Journal {
+private fun dummyJournal(
+    dateTime: LocalDateTime? = null,
+    topics: Set<String> = emptySet()
+): Journal {
     val randomDays = Random.nextInt(1, 8).toLong()
 
     return Journal(
