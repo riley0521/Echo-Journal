@@ -55,11 +55,15 @@ import com.rpfcoding.echo_journal.journal.domain.Journal
 import com.rpfcoding.echo_journal.journal.domain.Mood
 import com.rpfcoding.echo_journal.journal.presentation.components.AudioPlayer
 import com.rpfcoding.echo_journal.journal.presentation.components.JournalFilterDropdown
+import com.rpfcoding.echo_journal.journal.presentation.components.JournalFilterType
 import com.rpfcoding.echo_journal.journal.presentation.components.Topic
 import com.rpfcoding.echo_journal.journal.presentation.util.getMoodColors
 import com.rpfcoding.echo_journal.journal.presentation.util.getResIdByMood
 import java.time.LocalDateTime
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun JournalListScreenRoot() {
@@ -124,9 +128,8 @@ private fun JournalListScreen(
                 FlowRow(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    val shouldAddModifier = (state.filteredMoods.getSelectedCount() >= 2 &&
-                            state.filteredTopics.getSelectedCount() >= 3) ||
-                            state.filteredMoods.getSelectedCount() >= 4
+                    val shouldAddModifier = state.filteredTopics.getSelectedCount() >= 2 ||
+                            state.filteredMoods.getSelectedCount() >= 2
                     val widthModifier = if (shouldAddModifier) {
                         Modifier.fillMaxWidth()
                     } else {
@@ -139,6 +142,9 @@ private fun JournalListScreen(
                         onToggle = { filterType ->
                             onAction(JournalListAction.OnToggleMoodFilter(filterType))
                         },
+                        onClearFilter = {
+                            onAction(JournalListAction.OnClearMoodFilter)
+                        },
                         modifier = widthModifier
                     )
                     if (!shouldAddModifier) {
@@ -149,6 +155,9 @@ private fun JournalListScreen(
                         filterType = state.filteredTopics,
                         onToggle = { filterType ->
                             onAction(JournalListAction.OnToggleTopicFilter(filterType))
+                        },
+                        onClearFilter = {
+                            onAction(JournalListAction.OnClearTopicFilter)
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -184,6 +193,9 @@ private fun JournalListScreen(
                                     journal = journal,
                                     index = index,
                                     isLastItem = index == journals.lastIndex,
+                                    onTopicClick = {
+                                        onAction(JournalListAction.OnTopicClick(it))
+                                    },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -228,6 +240,7 @@ private fun JournalItem(
     journal: Journal,
     index: Int,
     isLastItem: Boolean,
+    onTopicClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     onTogglePlayback: (Journal) -> Unit = {}
 ) {
@@ -293,8 +306,8 @@ private fun JournalItem(
             // TODO: Create JournalUi to store the state.
             AudioPlayer(
                 isPlaying = false,
-                curPlaybackInSeconds = 92,
-                maxPlaybackInSeconds = 184,
+                curPlaybackInSeconds = 3945,
+                maxPlaybackInSeconds = (1.hours + 10.minutes + 11.seconds).inWholeSeconds,
                 moodColors = getMoodColors(journal.mood),
                 onToggle = { onTogglePlayback(journal) },
                 onValueChange = {}, // TODO
@@ -320,11 +333,12 @@ private fun JournalItem(
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     journal.topics.forEach { topic ->
                         Topic(
-                            text = topic
+                            text = topic,
+                            onClick = { onTopicClick(topic) }
                         )
                     }
                 }
@@ -364,6 +378,22 @@ private fun JournalListScreenPreview() {
                     is JournalListAction.OnToggleTopicFilter -> {
                         state = state.copy(filteredTopics = action.filter)
                     }
+                    is JournalListAction.OnTopicClick -> {
+                        val updatedFilteredTopics = state.filteredTopics.topics.map {
+                            if (it.name == action.topic && !it.isSelected) {
+                                it.copy(isSelected = true)
+                            } else it
+                        }.toSet()
+                        state = state.copy(filteredTopics = JournalFilterType.Topics(updatedFilteredTopics))
+                    }
+                    JournalListAction.OnClearMoodFilter -> {
+                        val moods = state.filteredMoods.moods.map { it.copy(isSelected = false) }.toSet()
+                        state = state.copy(filteredMoods = JournalFilterType.Moods(moods))
+                    }
+                    JournalListAction.OnClearTopicFilter -> {
+                        val topics = state.filteredTopics.topics.map { it.copy(isSelected = false) }.toSet()
+                        state = state.copy(filteredTopics = JournalFilterType.Topics(topics))
+                    }
                 }
             }
         )
@@ -390,6 +420,7 @@ private fun JournalItemPreview() {
             journal = dummyJournal(),
             index = 0,
             isLastItem = true,
+            onTopicClick = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)

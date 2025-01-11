@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -97,6 +98,7 @@ fun <T : JournalFilterType> JournalFilterDropdown(
     title: String,
     filterType: T,
     onToggle: (T) -> Unit,
+    onClearFilter: () -> Unit,
     modifier: Modifier = Modifier,
     itemVerticalPadding: Dp = 8.dp
 ) {
@@ -144,7 +146,8 @@ fun <T : JournalFilterType> JournalFilterDropdown(
         ) {
             FilterTitle(
                 title = title,
-                filterType = filterType
+                filterType = filterType,
+                onClearFilter = onClearFilter
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -269,6 +272,7 @@ fun <T : JournalFilterType> JournalFilterDropdown(
 private fun FilterTitle(
     title: String,
     filterType: JournalFilterType,
+    onClearFilter: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val paddingStart = if (filterType is JournalFilterType.Moods && filterType
@@ -279,6 +283,11 @@ private fun FilterTitle(
         12.dp
     } else {
         0.dp
+    }
+    val paddingEnd = if (filterType.getSelectedCount() > 0) {
+        8.dp
+    } else {
+        12.dp
     }
 
     Row(
@@ -303,10 +312,26 @@ private fun FilterTitle(
         }
         Text(
             text = getTitle(title, filterType),
-            modifier = Modifier.padding(end = 12.dp),
+            modifier = Modifier.padding(end = paddingEnd),
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
             color = MaterialTheme.colorScheme.secondary
         )
+        if (filterType.getSelectedCount() > 0) {
+            Box(
+                modifier = Modifier
+                    .padding(end = 10.dp)
+                    .clickable {
+                        onClearFilter()
+                    }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Clear filter",
+                    tint = MaterialTheme.colorScheme.surfaceTint,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
     }
 }
 
@@ -387,6 +412,7 @@ private fun JournalFilterDropdownPreview() {
             title = "All Moods",
             filterType = getMoodsFilterType(),
             onToggle = {},
+            onClearFilter = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp)

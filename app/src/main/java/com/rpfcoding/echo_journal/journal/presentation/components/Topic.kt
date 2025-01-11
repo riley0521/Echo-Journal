@@ -1,6 +1,7 @@
 package com.rpfcoding.echo_journal.journal.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -22,6 +23,7 @@ import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalThem
 @Composable
 fun Topic(
     text: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color(0xfff2f2f7),
     hashtagColor: Color = MaterialTheme.colorScheme.surfaceVariant
@@ -30,7 +32,10 @@ fun Topic(
         modifier = modifier
             .clip(RoundedCornerShape(100.dp))
             .background(backgroundColor)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .clickable {
+                onClick()
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -56,7 +61,8 @@ fun Topic(
 private fun TopicPreview() {
     EchoJournalTheme {
         Topic(
-            text = "Work"
+            text = "Work",
+            onClick = {}
         )
     }
 }

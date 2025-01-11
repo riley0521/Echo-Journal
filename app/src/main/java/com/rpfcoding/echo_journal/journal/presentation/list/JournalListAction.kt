@@ -5,4 +5,7 @@ import com.rpfcoding.echo_journal.journal.presentation.components.JournalFilterT
 sealed interface JournalListAction {
     data class OnToggleMoodFilter(val filter: JournalFilterType.Moods): JournalListAction
     data class OnToggleTopicFilter(val filter: JournalFilterType.Topics): JournalListAction
+    data object OnClearMoodFilter: JournalListAction
+    data object OnClearTopicFilter: JournalListAction
+    data class OnTopicClick(val topic: String): JournalListAction
 }

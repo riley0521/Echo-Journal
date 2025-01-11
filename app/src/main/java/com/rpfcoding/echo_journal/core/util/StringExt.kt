@@ -30,10 +30,21 @@ fun getDisplayTextByDate(value: LocalDate): String {
     }
 }
 
-fun formatSecondsToMinSecond(value: Long): String {
+fun formatSecondsToHourMinuteSecond(value: Long): String {
     val totalTimeDuration = value.toDuration(DurationUnit.SECONDS)
-    val minutes = totalTimeDuration.getMinutes()
+    val hours = totalTimeDuration.getHours()
+    val minutes = totalTimeDuration.getRemainingMinutes()
     val seconds = totalTimeDuration.getRemainingSeconds()
 
-    return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
+    val hourStr = if (hours > 0) {
+        hours.toString()
+    } else {
+        null
+    }
+    val minStr = String.format(Locale.getDefault(), "%02d", minutes)
+    val secondStr = String.format(Locale.getDefault(), "%02d", seconds)
+
+    val strList = listOfNotNull(hourStr, minStr, secondStr)
+
+    return strList.joinToString(":")
 }

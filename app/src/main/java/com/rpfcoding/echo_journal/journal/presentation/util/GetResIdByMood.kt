@@ -14,6 +14,16 @@ fun getResIdByMood(mood: Mood): Int {
     }
 }
 
+fun getMoodOutlined(mood: Mood): Int {
+    return when (mood) {
+        Mood.EXCITED -> R.drawable.ic_excited_outline
+        Mood.PEACEFUL -> R.drawable.ic_peaceful_outline
+        Mood.NEUTRAL -> R.drawable.ic_neutral_outline
+        Mood.SAD -> R.drawable.ic_sad_outline
+        Mood.STRESSED -> R.drawable.ic_stressed_outline
+    }
+}
+
 fun getMoodUiByMood(mood: Mood): MoodUi {
     val resId = getResIdByMood(mood)
     val name = when (mood) {
