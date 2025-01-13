@@ -1,7 +1,9 @@
 package com.rpfcoding.echo_journal.journal.presentation.list
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -43,7 +45,11 @@ import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
@@ -233,7 +239,6 @@ private fun EmptyJournalContent(
     }
 }
 
-// TODO: show more button
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun JournalItem(
@@ -248,6 +253,22 @@ private fun JournalItem(
         mutableIntStateOf(0)
     }
     val density = LocalDensity.current
+
+    var expandable by remember {
+        mutableStateOf(false)
+    }
+    var showMore by remember {
+        mutableStateOf(false)
+    }
+    var description by remember {
+        mutableStateOf(journal.description)
+    }
+
+    LaunchedEffect(showMore) {
+        if (showMore) {
+            description = journal.description
+        }
+    }
 
     Row(
         modifier = modifier,
@@ -314,17 +335,32 @@ private fun JournalItem(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(6.dp))
+
+            val isClickable = expandable && !showMore
+            val annotatedText = getDescription(description, isClickable)
             Text(
-                text = journal.description,
-                maxLines = 3,
+                text = annotatedText,
+                maxLines = if (showMore) Int.MAX_VALUE else 3,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .animateContentSize()
+                    .clickable(
+                        enabled = isClickable
+                    ) {
+                        showMore = true
+                    }
                     .semantics {
                         this.contentDescription = journal.description
                     },
-                color = MaterialTheme.colorScheme.surfaceVariant
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                onTextLayout = {
+                    if (!showMore && it.hasVisualOverflow) {
+                        expandable = true
+                        description = journal.description.substring(0, it.getLineEnd(2, visibleEnd = true))
+                    }
+                }
             )
 
             if (journal.topics.isNotEmpty()) {
@@ -347,6 +383,27 @@ private fun JournalItem(
     }
 }
 
+@Composable
+private fun getDescription(value: String, expandable: Boolean): AnnotatedString {
+    val showMoreStr = "... Show more"
+    return buildAnnotatedString {
+        if (expandable && value.length > showMoreStr.length) {
+            append(value.substring(0, value.length - showMoreStr.length))
+        } else {
+            append(value)
+        }
+        if (expandable) {
+            withStyle(
+                style = SpanStyle(
+                    color = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                append(showMoreStr)
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 private fun JournalListScreenPreview() {
@@ -359,7 +416,7 @@ private fun JournalListScreenPreview() {
                             dateTime = LocalDateTime.now(),
                             topics = setOf("Work", "Conundrums")
                         ),
-                        dummyJournal(dateTime = LocalDateTime.now()),
+                        dummyJournal(dateTime = LocalDateTime.now(), wordCount = 12),
                         dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
                         dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
                         dummyJournal(dateTime = LocalDateTime.now().plusDays(-2)),
@@ -430,14 +487,15 @@ private fun JournalItemPreview() {
 
 private fun dummyJournal(
     dateTime: LocalDateTime? = null,
-    topics: Set<String> = emptySet()
+    topics: Set<String> = emptySet(),
+    wordCount: Int = 69
 ): Journal {
     val randomDays = Random.nextInt(1, 8).toLong()
 
     return Journal(
         mood = Mood.entries.random(),
         title = "My Entry",
-        description = LoremIpsum(69).values.joinToString(" "),
+        description = LoremIpsum(wordCount).values.joinToString(" "),
         recordingUri = "",
         dateTimeCreated = dateTime ?: LocalDateTime.now().plusDays(-randomDays),
         topics = topics
