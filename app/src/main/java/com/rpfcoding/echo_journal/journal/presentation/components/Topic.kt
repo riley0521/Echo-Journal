@@ -2,11 +2,16 @@ package com.rpfcoding.echo_journal.journal.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,7 +31,9 @@ fun Topic(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color(0xfff2f2f7),
-    hashtagColor: Color = MaterialTheme.colorScheme.surfaceVariant
+    hashtagColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+    isDeletable: Boolean = false,
+    onDelete: (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier
@@ -53,6 +60,23 @@ fun Topic(
             style = MaterialTheme.typography.labelSmall,
             color = hashtagColor
         )
+        if (isDeletable) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .clickable {
+                        onDelete?.invoke()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    tint = hashtagColor.copy(alpha = 0.5f)
+                )
+            }
+        }
     }
 }
 
@@ -62,7 +86,8 @@ private fun TopicPreview() {
     EchoJournalTheme {
         Topic(
             text = "Work",
-            onClick = {}
+            onClick = {},
+            isDeletable = true
         )
     }
 }
