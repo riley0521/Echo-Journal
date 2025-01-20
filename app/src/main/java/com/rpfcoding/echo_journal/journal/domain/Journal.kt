@@ -9,6 +9,7 @@ data class Journal(
     val title: String,
     val description: String,
     val recordingUri: String,
+    val maxPlaybackInSeconds: Long,
     val dateTimeCreated: LocalDateTime,
     val topics: Set<String>
 )

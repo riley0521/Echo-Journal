@@ -24,6 +24,17 @@ fun getMoodOutlined(mood: Mood): Int {
     }
 }
 
+fun getMoodByName(value: String): Mood? {
+    return when (value) {
+        "Excited" -> Mood.EXCITED
+        "Peaceful" -> Mood.PEACEFUL
+        "Neutral" -> Mood.NEUTRAL
+        "Sad" -> Mood.SAD
+        "Stressed" -> Mood.STRESSED
+        else -> null
+    }
+}
+
 fun getMoodUiByMood(mood: Mood): MoodUi {
     val resId = getResIdByMood(mood)
     val name = when (mood) {

@@ -67,9 +67,6 @@ import com.rpfcoding.echo_journal.journal.presentation.util.getMoodColors
 import com.rpfcoding.echo_journal.journal.presentation.util.getResIdByMood
 import java.time.LocalDateTime
 import kotlin.random.Random
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun JournalListScreenRoot() {
@@ -82,22 +79,6 @@ private fun JournalListScreen(
     state: JournalListState,
     onAction: (JournalListAction) -> Unit
 ) {
-    
-    // TODO: Remove this and dateToJournalsMap, this should be sorted in viewModel
-    LaunchedEffect(Unit) {
-        val f = state
-            .journals
-            .groupBy { it.dateTimeCreated.toLocalDate() }
-            .toSortedMap(compareByDescending { it })
-        println(f)
-    }
-
-    val dateToJournalsMap = remember(state.journals) {
-        state
-            .journals
-            .groupBy { it.dateTimeCreated.toLocalDate() }
-            .toSortedMap(compareByDescending { it })
-    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -169,7 +150,7 @@ private fun JournalListScreen(
                     )
                 }
             }
-            if (state.journals.isEmpty()) {
+            if (state.dateToJournalsMap.isEmpty()) {
                 item {
                     EmptyJournalContent(
                         modifier = Modifier
@@ -178,7 +159,7 @@ private fun JournalListScreen(
                     )
                 }
             } else {
-                dateToJournalsMap.forEach { (date, journals) ->
+                state.dateToJournalsMap.forEach { (date, journals) ->
                     item {
                         Text(
                             text = getDisplayTextByDate(date).uppercase(),
@@ -195,12 +176,20 @@ private fun JournalListScreen(
                                 }
                         ) {
                             journals.forEachIndexed { index, journal ->
+                                val isCurrentlyPlaying = state.currentFilePlaying == journal.recordingUri
                                 JournalItem(
-                                    journal = journal,
+                                    item = journal,
                                     index = index,
                                     isLastItem = index == journals.lastIndex,
+                                    isPlaying = isCurrentlyPlaying && state.isPlaying,
+                                    curPlaybackInSeconds = if (isCurrentlyPlaying) {
+                                        state.curPlaybackInSeconds
+                                    } else 0,
                                     onTopicClick = {
                                         onAction(JournalListAction.OnTopicClick(it))
+                                    },
+                                    onTogglePlayback = {
+                                        onAction(JournalListAction.OnTogglePlayback(journal))
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 )
@@ -242,12 +231,14 @@ private fun EmptyJournalContent(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun JournalItem(
-    journal: Journal,
+    item: Journal,
     index: Int,
     isLastItem: Boolean,
+    isPlaying: Boolean,
+    curPlaybackInSeconds: Long,
     onTopicClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    onTogglePlayback: (Journal) -> Unit = {}
+    onTogglePlayback: () -> Unit = {}
 ) {
     var height by remember {
         mutableIntStateOf(0)
@@ -261,12 +252,12 @@ private fun JournalItem(
         mutableStateOf(false)
     }
     var description by remember {
-        mutableStateOf(journal.description)
+        mutableStateOf(item.description)
     }
 
     LaunchedEffect(showMore) {
         if (showMore) {
-            description = journal.description
+            description = item.description
         }
     }
 
@@ -284,7 +275,7 @@ private fun JournalItem(
             }
 
             Image(
-                painter = painterResource(id = getResIdByMood(journal.mood)),
+                painter = painterResource(id = getResIdByMood(item.mood)),
                 contentDescription = null
             )
             if (!isLastItem) {
@@ -313,24 +304,23 @@ private fun JournalItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = journal.title,
+                    text = item.title,
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Text(
-                    text = formatLocalDateTimeToHourMinute(journal.dateTimeCreated),
+                    text = formatLocalDateTimeToHourMinute(item.dateTimeCreated),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
 
-            // TODO: Create JournalUi to store the state.
             AudioPlayer(
-                isPlaying = false,
-                curPlaybackInSeconds = 3945,
-                maxPlaybackInSeconds = (1.hours + 10.minutes + 11.seconds).inWholeSeconds,
-                moodColors = getMoodColors(journal.mood),
-                onToggle = { onTogglePlayback(journal) },
+                isPlaying = isPlaying,
+                curPlaybackInSeconds = curPlaybackInSeconds,
+                maxPlaybackInSeconds = item.maxPlaybackInSeconds,
+                moodColors = getMoodColors(item.mood),
+                onToggle = { onTogglePlayback() },
                 onValueChange = {}, // TODO
                 modifier = Modifier.fillMaxWidth()
             )
@@ -352,18 +342,20 @@ private fun JournalItem(
                         showMore = true
                     }
                     .semantics {
-                        this.contentDescription = journal.description
+                        this.contentDescription = item.description
                     },
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 onTextLayout = {
                     if (!showMore && it.hasVisualOverflow) {
                         expandable = true
-                        description = journal.description.substring(0, it.getLineEnd(2, visibleEnd = true))
+                        description = item
+                            .description
+                            .substring(0, it.getLineEnd(2, visibleEnd = true))
                     }
                 }
             )
 
-            if (journal.topics.isNotEmpty()) {
+            if (item.topics.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(6.dp))
 
                 FlowRow(
@@ -371,7 +363,7 @@ private fun JournalItem(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    journal.topics.forEach { topic ->
+                    item.topics.forEach { topic ->
                         Topic(
                             text = topic,
                             onClick = { onTopicClick(topic) }
@@ -408,19 +400,21 @@ private fun getDescription(value: String, expandable: Boolean): AnnotatedString 
 @Composable
 private fun JournalListScreenPreview() {
     EchoJournalTheme {
+        val journals = listOf(
+            dummyJournal(
+                dateTime = LocalDateTime.now(),
+                topics = setOf("Work", "Conundrums")
+            ),
+            dummyJournal(dateTime = LocalDateTime.now(), wordCount = 12),
+            dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
+            dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
+            dummyJournal(dateTime = LocalDateTime.now().plusDays(-2)),
+        ).groupBy { it.dateTimeCreated.toLocalDate() }
+            .toSortedMap(compareBy { it })
         var state by remember {
             mutableStateOf(
                 JournalListState(
-                    journals = listOf(
-                        dummyJournal(
-                            dateTime = LocalDateTime.now(),
-                            topics = setOf("Work", "Conundrums")
-                        ),
-                        dummyJournal(dateTime = LocalDateTime.now(), wordCount = 12),
-                        dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
-                        dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
-                        dummyJournal(dateTime = LocalDateTime.now().plusDays(-2)),
-                    )
+                    dateToJournalsMap = journals
                 )
             )
         }
@@ -451,6 +445,17 @@ private fun JournalListScreenPreview() {
                         val topics = state.filteredTopics.topics.map { it.copy(isSelected = false) }.toSet()
                         state = state.copy(filteredTopics = JournalFilterType.Topics(topics))
                     }
+                    is JournalListAction.OnTogglePlayback -> {}
+                    JournalListAction.OnOpenCreateRecordingClick -> {
+                        state = state.copy(isRecordBottomSheetOpened = true)
+                    }
+                    JournalListAction.OnToggleRecord -> {}
+                    JournalListAction.OnCancelRecordingClick -> {
+                        state = state.copy(isRecordBottomSheetOpened = false)
+                    }
+                    JournalListAction.OnFinishRecordingClick -> {
+                        state = state.copy(isRecordBottomSheetOpened = false)
+                    }
                 }
             }
         )
@@ -474,9 +479,11 @@ private fun EmptyJournalContentPreview() {
 private fun JournalItemPreview() {
     EchoJournalTheme {
         JournalItem(
-            journal = dummyJournal(),
+            item = dummyJournal(),
             index = 0,
             isLastItem = true,
+            isPlaying = false,
+            curPlaybackInSeconds = 0,
             onTopicClick = {},
             modifier = Modifier
                 .fillMaxWidth()
@@ -497,6 +504,7 @@ private fun dummyJournal(
         title = "My Entry",
         description = LoremIpsum(wordCount).values.joinToString(" "),
         recordingUri = "",
+        maxPlaybackInSeconds = 0,
         dateTimeCreated = dateTime ?: LocalDateTime.now().plusDays(-randomDays),
         topics = topics
     )
