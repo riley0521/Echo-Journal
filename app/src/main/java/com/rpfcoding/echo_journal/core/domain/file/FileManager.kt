@@ -1,4 +1,4 @@
-package com.rpfcoding.echo_journal.core.file.domain
+package com.rpfcoding.echo_journal.core.domain.file
 
 import java.io.File
 

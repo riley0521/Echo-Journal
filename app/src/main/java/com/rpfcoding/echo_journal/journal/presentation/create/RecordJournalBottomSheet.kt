@@ -40,21 +40,26 @@ fun RecordJournalBottomSheet(
     hasStartedRecording: Boolean,
     isPlaying: Boolean,
     durationInSeconds: Long,
-    onFinishRecording: () -> Unit,
+    onToggleRecording: () -> Unit,
     onPausePlay: () -> Unit,
-    onCancelRecording: () -> Unit
+    onCancelRecording: () -> Unit,
+    onFinishRecording: () -> Unit
 ) {
     val playButtonInnerSize = 72.dp
     val playButtonMiddleSize = (playButtonInnerSize.value + (playButtonInnerSize.value * 0.35)).roundToInt().dp
     val playButtonOuterSize = (playButtonInnerSize.value + (playButtonInnerSize.value * 0.6)).roundToInt().dp
 
-    BottomSheetWithHeaderAndFooter {
+    BottomSheetWithHeaderAndFooter(hideFooter = true) {
         Spacer(modifier = Modifier.height(18.dp))
         Text(
             text = if (isPlaying) {
                 "Recording your memories..."
             } else {
-                "Recording paused"
+                if (hasStartedRecording) {
+                    "Recording paused"
+                } else {
+                    "Recording not started yet."
+                }
             },
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
@@ -117,13 +122,17 @@ fun RecordJournalBottomSheet(
                         .clip(RoundedCornerShape(133.dp))
                         .background(MaterialTheme.colorScheme.primaryContainer)
                         .clickable {
-                            onFinishRecording()
+                            if (!hasStartedRecording) {
+                                onToggleRecording()
+                            } else {
+                                onFinishRecording()
+                            }
                         },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = if (hasStartedRecording) Icons.Default.Check else Icons.Default.Mic,
-                        contentDescription = "Finish recording",
+                        contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(32.dp)
                     )
@@ -134,7 +143,7 @@ fun RecordJournalBottomSheet(
                     .size(48.dp)
                     .clip(RoundedCornerShape(100.dp))
                     .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .clickable {
+                    .clickable(enabled = hasStartedRecording) {
                         onPausePlay()
                     },
                 contentAlignment = Alignment.Center
@@ -159,9 +168,10 @@ private fun RecordJournalBottomSheetPreview() {
             hasStartedRecording = true,
             isPlaying = true,
             durationInSeconds = (3.hours + 22.minutes + 24.seconds).inWholeSeconds,
-            onFinishRecording = {},
+            onToggleRecording = {},
             onPausePlay = {},
-            onCancelRecording = {}
+            onCancelRecording = {},
+            onFinishRecording = {}
         )
     }
 }

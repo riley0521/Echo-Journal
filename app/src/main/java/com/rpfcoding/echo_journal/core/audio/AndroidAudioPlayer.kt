@@ -1,10 +1,10 @@
-package com.rpfcoding.echo_journal.core.audio.data
+package com.rpfcoding.echo_journal.core.audio
 
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.core.net.toUri
-import com.rpfcoding.echo_journal.core.audio.domain.AudioPlayer
+import com.rpfcoding.echo_journal.core.domain.audio.AudioPlayer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -29,7 +29,7 @@ class AndroidAudioPlayer(
     private var currentAudioUri: Uri? = null
     private var playbackJob: Job? = null
 
-    override fun play(file: File) {
+    override fun play(file: File, shouldPlayImmediately: Boolean) {
 
         val audioUri = file.toUri()
         if (currentAudioUri != null) {
@@ -39,9 +39,15 @@ class AndroidAudioPlayer(
         MediaPlayer.create(context, audioUri).apply {
             player = this
             currentAudioUri = audioUri
-            start()
 
-            updatePlayback()
+            if (shouldPlayImmediately) {
+                start()
+                updatePlayback()
+            }
+
+            setOnCompletionListener {
+                resetJob()
+            }
         }
     }
 
@@ -79,5 +85,9 @@ class AndroidAudioPlayer(
     override fun resume() {
         player?.start()
         updatePlayback()
+    }
+
+    override fun stopAndResetPlayer() {
+        resetAllState()
     }
 }

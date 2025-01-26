@@ -1,5 +1,8 @@
 package com.rpfcoding.echo_journal.journal.presentation.list
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,24 +24,29 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.CollectionInfo
@@ -53,8 +61,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rpfcoding.echo_journal.R
 import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalTheme
+import com.rpfcoding.echo_journal.core.presentation.ui.ObserveAsEvents
+import com.rpfcoding.echo_journal.core.presentation.ui.showToastStr
 import com.rpfcoding.echo_journal.core.util.formatLocalDateTimeToHourMinute
 import com.rpfcoding.echo_journal.core.util.getDisplayTextByDate
 import com.rpfcoding.echo_journal.journal.domain.Journal
@@ -63,28 +74,107 @@ import com.rpfcoding.echo_journal.journal.presentation.components.AudioPlayer
 import com.rpfcoding.echo_journal.journal.presentation.components.JournalFilterDropdown
 import com.rpfcoding.echo_journal.journal.presentation.components.JournalFilterType
 import com.rpfcoding.echo_journal.journal.presentation.components.Topic
+import com.rpfcoding.echo_journal.journal.presentation.create.RecordJournalBottomSheet
 import com.rpfcoding.echo_journal.journal.presentation.util.getMoodColors
 import com.rpfcoding.echo_journal.journal.presentation.util.getResIdByMood
+import com.rpfcoding.echo_journal.journal.presentation.util.hasRecordAudioPermission
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDateTime
 import kotlin.random.Random
 
 @Composable
-fun JournalListScreenRoot() {
+fun JournalListScreenRoot(
+    onNavigateToCreateJournal: (id: String, fileUri: String) -> Unit,
+    viewModel: JournalListViewModel = koinViewModel()
+) {
+    val context = LocalContext.current
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
+    ObserveAsEvents(viewModel.events) { event ->
+        when (event) {
+            is JournalListEvent.CreateJournalSuccess -> {
+                onNavigateToCreateJournal(event.id, event.fileUri)
+            }
+            is JournalListEvent.Error -> {
+                context.showToastStr(event.text.asString(context))
+            }
+        }
+    }
+
+    JournalListScreen(
+        state = state,
+        onAction = viewModel::onAction
+    )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun JournalListScreen(
     state: JournalListState,
     onAction: (JournalListAction) -> Unit
 ) {
 
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            onAction(JournalListAction.OnRecordPermissionGranted(isGranted))
+        }
+    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        if (context.hasRecordAudioPermission()) {
+            onAction(JournalListAction.OnRecordPermissionGranted(true))
+        }
+    }
+
+    fun startRecordingIfPermissionGranted() {
+        if (!state.canRecord) {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            return
+        }
+
+        onAction(JournalListAction.OnToggleRecord)
+    }
+
+    if (state.isRecordBottomSheetOpened) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                    onAction(JournalListAction.OnToggleRecordingBottomSheet(false))
+                }
+            },
+            sheetState = sheetState,
+            dragHandle = null,
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            RecordJournalBottomSheet(
+                hasStartedRecording = state.hasStartedRecording,
+                isPlaying = state.isRecording,
+                durationInSeconds = state.durationInSeconds,
+                onToggleRecording = ::startRecordingIfPermissionGranted,
+                onPausePlay = { onAction(JournalListAction.OnToggleRecord) },
+                onCancelRecording = {
+                    onAction(JournalListAction.OnCancelRecordingClick)
+                },
+                onFinishRecording = {
+                    onAction(JournalListAction.OnFinishRecordingClick)
+                }
+            )
+        }
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {},
+                onClick = {
+                    onAction(JournalListAction.OnToggleRecordingBottomSheet(true))
+                    startRecordingIfPermissionGranted()
+                },
                 shape = CircleShape,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.padding(
@@ -177,11 +267,12 @@ private fun JournalListScreen(
                         ) {
                             journals.forEachIndexed { index, journal ->
                                 val isCurrentlyPlaying = state.currentFilePlaying == journal.recordingUri
+                                val isFinished = state.curPlaybackInSeconds >= journal.maxPlaybackInSeconds
                                 JournalItem(
                                     item = journal,
                                     index = index,
                                     isLastItem = index == journals.lastIndex,
-                                    isPlaying = isCurrentlyPlaying && state.isPlaying,
+                                    isPlaying = isCurrentlyPlaying && state.isPlaying && isFinished,
                                     curPlaybackInSeconds = if (isCurrentlyPlaying) {
                                         state.curPlaybackInSeconds
                                     } else 0,
@@ -405,12 +496,13 @@ private fun JournalListScreenPreview() {
                 dateTime = LocalDateTime.now(),
                 topics = setOf("Work", "Conundrums")
             ),
-            dummyJournal(dateTime = LocalDateTime.now(), wordCount = 12),
-            dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
+            dummyJournal(dateTime = LocalDateTime.now()),
+            dummyJournal(dateTime = LocalDateTime.now()),
+            dummyJournal(dateTime = LocalDateTime.now()),
             dummyJournal(dateTime = LocalDateTime.now().plusDays(-1)),
             dummyJournal(dateTime = LocalDateTime.now().plusDays(-2)),
         ).groupBy { it.dateTimeCreated.toLocalDate() }
-            .toSortedMap(compareBy { it })
+            .toSortedMap(compareByDescending { it })
         var state by remember {
             mutableStateOf(
                 JournalListState(
@@ -446,8 +538,11 @@ private fun JournalListScreenPreview() {
                         state = state.copy(filteredTopics = JournalFilterType.Topics(topics))
                     }
                     is JournalListAction.OnTogglePlayback -> {}
-                    JournalListAction.OnOpenCreateRecordingClick -> {
-                        state = state.copy(isRecordBottomSheetOpened = true)
+                    is JournalListAction.OnRecordPermissionGranted -> {
+                        state = state.copy(canRecord = action.isGranted)
+                    }
+                    is JournalListAction.OnToggleRecordingBottomSheet -> {
+                        state = state.copy(isRecordBottomSheetOpened = action.isOpen)
                     }
                     JournalListAction.OnToggleRecord -> {}
                     JournalListAction.OnCancelRecordingClick -> {
@@ -481,7 +576,7 @@ private fun JournalItemPreview() {
         JournalItem(
             item = dummyJournal(),
             index = 0,
-            isLastItem = true,
+            isLastItem = false,
             isPlaying = false,
             curPlaybackInSeconds = 0,
             onTopicClick = {},

@@ -21,6 +21,7 @@ import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalThem
 
 @Composable
 fun BottomSheetWithHeaderAndFooter(
+    hideFooter: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
@@ -44,16 +45,18 @@ fun BottomSheetWithHeaderAndFooter(
         Spacer(modifier = Modifier.height(16.dp))
         content()
         Spacer(modifier = Modifier.height(10.dp))
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
+        if (!hideFooter) {
             Box(
-                modifier = Modifier
-                    .size(96.dp, 4.dp)
-                    .clip(RoundedCornerShape(100.dp))
-                    .background(color = Color.Black)
-            )
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(96.dp, 4.dp)
+                        .clip(RoundedCornerShape(100.dp))
+                        .background(color = Color.Black)
+                )
+            }
         }
         Spacer(modifier = Modifier.height(10.dp))
     }

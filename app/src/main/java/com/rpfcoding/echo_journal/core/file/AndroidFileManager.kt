@@ -1,11 +1,11 @@
-package com.rpfcoding.echo_journal.core.file.data
+package com.rpfcoding.echo_journal.core.file
 
 import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.core.net.toFile
 import androidx.core.net.toUri
-import com.rpfcoding.echo_journal.core.file.domain.FileManager
+import com.rpfcoding.echo_journal.core.domain.file.FileManager
 import java.io.File
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration

@@ -8,10 +8,12 @@ import java.time.LocalDate
 
 data class JournalListState(
     val dateToJournalsMap: Map<LocalDate, List<Journal>> = emptyMap(),
+    val allTopics: Set<String> = emptySet(),
+    val canRecord: Boolean = false,
     val isRecordBottomSheetOpened: Boolean = false,
     val hasStartedRecording: Boolean = false,
     val isRecording: Boolean = false,
-    val durationInMillis: Long = 0L,
+    val durationInSeconds: Long = 0L,
     val currentFilePlaying: String? = null,
     val isPlaying: Boolean = false,
     val curPlaybackInSeconds: Long = 0,

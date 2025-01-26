@@ -1,12 +1,11 @@
-package com.rpfcoding.echo_journal.core.audio.data
+package com.rpfcoding.echo_journal.core.audio
 
 import android.content.Context
 import android.media.MediaRecorder
-import android.net.Uri
 import android.os.Build
 import androidx.core.net.toUri
-import com.rpfcoding.echo_journal.core.audio.domain.AudioRecorder
-import com.rpfcoding.echo_journal.core.audio.domain.FileParent
+import com.rpfcoding.echo_journal.core.domain.audio.AudioRecorder
+import com.rpfcoding.echo_journal.core.domain.audio.FileParent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -22,7 +21,7 @@ class AndroidAudioRecorder(
 ): AudioRecorder {
 
     private var recorder: MediaRecorder? = null
-    private var outputUri: Uri? = null
+    private var outputFile: File? = null
 
     private var recordingJob: Job? = null
     private val _durationInMillis = MutableStateFlow<Long>(0)
@@ -39,7 +38,11 @@ class AndroidAudioRecorder(
             FileParent.Cache -> context.cacheDir
             is FileParent.Custom -> fileParent.value
         }
-        val outputFile = File(parent, "${fileName}.mp3")
+        if (!parent.isDirectory) {
+            throw Exception("Custom fileParent is not a folder!")
+        }
+
+        outputFile = File(parent, "${fileName}.mp3")
 
         createRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
@@ -47,13 +50,12 @@ class AndroidAudioRecorder(
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
             setAudioEncodingBitRate(128_000)
             setAudioSamplingRate(44_100)
-            setOutputFile(outputFile.absolutePath)
+            setOutputFile(outputFile!!.absolutePath)
 
             prepare()
             start()
 
             recorder = this
-            outputUri = outputFile.toUri()
             updateDuration()
         }
     }
@@ -83,7 +85,11 @@ class AndroidAudioRecorder(
         resetJob()
     }
 
-    override fun stop(): String {
+    override fun stop(discardFile: Boolean): String {
+        if (discardFile) {
+            outputFile?.delete()
+        }
+
         recorder?.stop()
         recorder?.reset()
         recorder?.release()
@@ -91,6 +97,6 @@ class AndroidAudioRecorder(
         resetJob()
         _durationInMillis.update { 0L }
 
-        return outputUri?.toString() ?: throw Exception("There is no created recording.")
+        return outputFile?.toUri()?.toString().orEmpty()
     }
 }

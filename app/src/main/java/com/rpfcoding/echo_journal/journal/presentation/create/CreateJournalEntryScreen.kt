@@ -1,5 +1,6 @@
 package com.rpfcoding.echo_journal.journal.presentation.create
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,42 +31,81 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalTheme
+import com.rpfcoding.echo_journal.core.presentation.ui.ObserveAsEvents
+import com.rpfcoding.echo_journal.core.presentation.ui.showToastStr
 import com.rpfcoding.echo_journal.journal.domain.Mood
 import com.rpfcoding.echo_journal.journal.presentation.components.AudioPlayer
 import com.rpfcoding.echo_journal.journal.presentation.components.Topic
 import com.rpfcoding.echo_journal.journal.presentation.util.getMoodColors
+import com.rpfcoding.echo_journal.journal.presentation.util.getResIdByMood
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun CreateJournalEntryScreenRoot() {
+fun CreateJournalEntryScreenRoot(
+    onNavigateBack: () -> Unit,
+    viewModel: CreateJournalEntryViewModel = koinViewModel()
+) {
+    val context = LocalContext.current
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
+    ObserveAsEvents(viewModel.events) { event ->
+        when (event) {
+            is CreateJournalEntryEvent.Error -> {
+                context.showToastStr(event.error.asString(context))
+            }
+            CreateJournalEntryEvent.NavigateBack -> {
+                onNavigateBack()
+            }
+            CreateJournalEntryEvent.Success -> {
+                context.showToastStr("Journal successfully created!")
+                onNavigateBack()
+            }
+        }
+    }
+
+    CreateJournalEntryScreen(
+        state = state,
+        onAction = viewModel::onAction
+    )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateJournalEntryScreen(
     state: CreateJournalEntryState,
@@ -74,6 +114,82 @@ private fun CreateJournalEntryScreen(
     val color = Color(0xffc1c3ce)
     var topicsHeight by remember {
         mutableIntStateOf(0)
+    }
+    var isTopicsFieldFocused by remember {
+        mutableStateOf(false)
+    }
+    val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    fun hideBottomSheet() {
+        scope.launch { sheetState.hide() }.invokeOnCompletion {
+            onAction(CreateJournalEntryAction.OnToggleSelectMoodBottomSheet(false))
+        }
+    }
+
+    if (state.isSelectMoodBottomSheetOpened) {
+        ModalBottomSheet(
+            onDismissRequest = ::hideBottomSheet,
+            sheetState = sheetState,
+            dragHandle = null,
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            SelectMoodBottomSheet(
+                initialMood = state.selectedMood,
+                onCancel = ::hideBottomSheet,
+                onConfirm = {
+                    onAction(CreateJournalEntryAction.OnSelectMood(it))
+                    hideBottomSheet()
+                }
+            )
+        }
+    }
+
+    if (state.isCancelCreateJournalEntryDialogOpened) {
+        Dialog(
+            onDismissRequest = {
+                onAction(CreateJournalEntryAction.OnToggleCancelDialog(false))
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White)
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "Cancel create journal".uppercase(),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Are you sure you want to cancel creating new journal? Your recording will be deleted."
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = {
+                            onAction(CreateJournalEntryAction.OnToggleCancelDialog(false))
+                        }
+                    ) {
+                        Text(text = "No")
+                    }
+                    TextButton(
+                        onClick = {
+                            onAction(CreateJournalEntryAction.OnCancelCreateJournalEntry)
+                            onAction(CreateJournalEntryAction.OnToggleCancelDialog(false))
+                        }
+                    ) {
+                        Text(text = "Yes")
+                    }
+                }
+            }
+        }
     }
 
     Column(
@@ -93,7 +209,9 @@ private fun CreateJournalEntryScreen(
                     .padding(top = 18.dp)
             )
             IconButton(
-                onClick = {}
+                onClick = {
+                    onAction(CreateJournalEntryAction.OnToggleCancelDialog(true))
+                }
             ) {
                 Icon(
                     imageVector = Icons.Default.ChevronLeft,
@@ -118,16 +236,24 @@ private fun CreateJournalEntryScreen(
                     .clip(RoundedCornerShape(100.dp))
                     .background(MaterialTheme.colorScheme.secondaryContainer)
                     .clickable {
-
+                        onAction(CreateJournalEntryAction.OnToggleSelectMoodBottomSheet(true))
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                )
+                if (state.selectedMood == null) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(getResIdByMood(state.selectedMood)),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(12.dp))
             BasicTextField(
@@ -154,11 +280,13 @@ private fun CreateJournalEntryScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
         AudioPlayer(
-            isPlaying = state.isPlaying,
+            isPlaying = state.isPlaying && state.curPlaybackInSeconds >= state.maxPlaybackInSeconds,
             curPlaybackInSeconds = state.curPlaybackInSeconds,
             maxPlaybackInSeconds = state.maxPlaybackInSeconds,
             moodColors = getMoodColors(state.selectedMood ?: Mood.NEUTRAL),
-            onToggle = {},
+            onToggle = {
+                onAction(CreateJournalEntryAction.OnToggleAudioPlayer)
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -193,7 +321,9 @@ private fun CreateJournalEntryScreen(
                             text = it,
                             onClick = {},
                             isDeletable = true,
-                            onDelete = {}
+                            onDelete = {
+                                onAction(CreateJournalEntryAction.OnDeleteTopic(it))
+                            }
                         )
                     }
                     TopicTextField(
@@ -202,7 +332,10 @@ private fun CreateJournalEntryScreen(
                             onAction(CreateJournalEntryAction.OnInputTopic(it))
                         },
                         hintColor = color,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onFocusChange = {
+                            isTopicsFieldFocused = it
+                        }
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -222,8 +355,13 @@ private fun CreateJournalEntryScreen(
                 TopicFilterDropdown(
                     query = state.inputTopic,
                     topics = state.allTopics,
-                    onTopicClick = {},
-                    onCreateNewTopicClick = {},
+                    onTopicClick = {
+                        onAction(CreateJournalEntryAction.OnSelectTopic(it))
+                    },
+                    onCreateNewTopicClick = {
+                        onAction(CreateJournalEntryAction.OnAddNewTopic)
+                    },
+                    isFocused = isTopicsFieldFocused,
                     modifier = Modifier
                         .fillMaxWidth()
                         .offset {
@@ -237,7 +375,7 @@ private fun CreateJournalEntryScreen(
         CancelAndSaveButton(
             canSave = state.canSave,
             onCancelClick = {
-                onAction(CreateJournalEntryAction.OnCancelClick)
+                onAction(CreateJournalEntryAction.OnToggleCancelDialog(true))
             },
             onSaveClick = {
                 onAction(CreateJournalEntryAction.OnSaveClick)
@@ -254,7 +392,8 @@ private fun TopicTextField(
     value: String,
     onValueChange: (String) -> Unit,
     hintColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onFocusChange: (Boolean) -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -276,6 +415,9 @@ private fun TopicTextField(
                     }
                     innerBox()
                 }
+            },
+            modifier = Modifier.onFocusChanged {
+                onFocusChange(it.hasFocus)
             }
         )
     }
@@ -289,7 +431,8 @@ private fun TopicFilterDropdown(
     onCreateNewTopicClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(10.dp),
-    itemVerticalPadding: Dp = 10.dp
+    itemVerticalPadding: Dp = 10.dp,
+    isFocused: Boolean = false
 ) {
     val density = LocalDensity.current
     var itemHeight by remember {
@@ -298,14 +441,18 @@ private fun TopicFilterDropdown(
     var addItemHeight by remember {
         mutableIntStateOf(0)
     }
-    val filteredTopics = remember(query, topics) {
+    val filteredTopics = remember(query, topics, isFocused) {
         if (query.isNotBlank()) {
             topics.filter {
                 it.contains(query, true)
             }
-        } else emptyList()
+        } else {
+            if (isFocused) {
+                topics.take(3)
+            } else emptyList()
+        }
     }
-    val isNewTopic = filteredTopics.none { it.equals(query, true) }
+    val isNewTopic = query.isNotBlank() && filteredTopics.none { it.equals(query, true) }
 
     LaunchedEffect(filteredTopics, isNewTopic) {
         if (filteredTopics.isEmpty()) {
@@ -476,7 +623,9 @@ private fun CancelAndSaveButton(
 @Composable
 private fun CreateJournalEntryScreenPreview() {
     EchoJournalTheme {
-        val otherTopics = setOf("Jack", "Jared", "Jasper", "January", "Janitor", "Jane", "Jaa", "Jab", "Jaden", "Jagger", "Jah", "Jai", "Jaju", "Jakal", "Jalam", "Jamal")
+        var otherTopics by remember {
+           mutableStateOf<Set<String>>(setOf("Jack", "Jared", "Jasper", "January", "Janitor", "Jane", "Jaa", "Jab", "Jaden", "Jagger", "Jah", "Jai", "Jaju", "Jakal", "Jalam", "Jamal"))
+        }
         var state by remember {
             mutableStateOf(
                 CreateJournalEntryState(
@@ -486,17 +635,50 @@ private fun CreateJournalEntryScreenPreview() {
             )
         }
 
+        fun filterSelectedTopics() {
+            val unselectedTopics = otherTopics.filter { !state.selectedTopics.contains(it) }
+            state = state.copy(
+                allTopics = unselectedTopics.toSet()
+            )
+        }
+
         CreateJournalEntryScreen(
             state = state,
             onAction = { action ->
                 when (action) {
-                    is CreateJournalEntryAction.OnDeleteTopic -> {}
-                    CreateJournalEntryAction.OnGoBack -> {}
                     is CreateJournalEntryAction.OnInputTopic -> {
                         state = state.copy(inputTopic = action.value)
                     }
+                    is CreateJournalEntryAction.OnDeleteTopic -> {
+                        state = state.copy(
+                            selectedTopics = state.selectedTopics - action.value
+                        )
+                        filterSelectedTopics()
+                    }
+                    is CreateJournalEntryAction.OnSelectTopic -> {
+                        state = state.copy(
+                            selectedTopics = state.selectedTopics + action.value,
+                            inputTopic = ""
+                        )
+                        filterSelectedTopics()
+                    }
+                    CreateJournalEntryAction.OnAddNewTopic -> {
+                        val newTopic = state.inputTopic.trim().replaceFirstChar { it.uppercase() }
+                        otherTopics = otherTopics + newTopic
+                        state = state.copy(
+                            selectedTopics = state.selectedTopics + newTopic,
+                            allTopics = otherTopics,
+                            inputTopic = ""
+                        )
+                        filterSelectedTopics()
+                    }
 
-                    CreateJournalEntryAction.OnSelectMood -> {}
+                    is CreateJournalEntryAction.OnToggleSelectMoodBottomSheet -> {
+                        state = state.copy(isSelectMoodBottomSheetOpened = action.isOpen)
+                    }
+                    is CreateJournalEntryAction.OnSelectMood -> {
+                        state = state.copy(selectedMood = action.mood)
+                    }
                     is CreateJournalEntryAction.OnTitleChange -> {
                         state = state.copy(title = action.value)
                     }
@@ -504,7 +686,10 @@ private fun CreateJournalEntryScreenPreview() {
                         state = state.copy(description = action.value)
                     }
                     CreateJournalEntryAction.OnToggleAudioPlayer -> {}
-                    CreateJournalEntryAction.OnCancelClick -> {}
+                    is CreateJournalEntryAction.OnToggleCancelDialog -> {
+                        state = state.copy(isCancelCreateJournalEntryDialogOpened = action.isOpen)
+                    }
+                    CreateJournalEntryAction.OnCancelCreateJournalEntry -> {}
                     CreateJournalEntryAction.OnSaveClick -> {}
                 }
             }

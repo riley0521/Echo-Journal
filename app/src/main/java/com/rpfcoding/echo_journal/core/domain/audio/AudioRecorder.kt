@@ -1,4 +1,4 @@
-package com.rpfcoding.echo_journal.core.audio.domain
+package com.rpfcoding.echo_journal.core.domain.audio
 
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
@@ -21,7 +21,8 @@ interface AudioRecorder {
     fun pause()
 
     /**
+     * @param discardFile If true, it will stop the recording and delete the file created.
      * @return Uri of the created audio file.
      */
-    fun stop(): String
+    fun stop(discardFile: Boolean = false): String
 }

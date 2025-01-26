@@ -40,14 +40,15 @@ import com.rpfcoding.echo_journal.journal.presentation.util.getResIdByMood
 
 @Composable
 fun SelectMoodBottomSheet(
+    initialMood: Mood?,
     onCancel: () -> Unit,
     onConfirm: (Mood) -> Unit,
 ) {
-    var selectedMood by remember {
-        mutableStateOf<Mood?>(null)
+    var selectedMood by remember(initialMood) {
+        mutableStateOf(initialMood)
     }
 
-    BottomSheetWithHeaderAndFooter {
+    BottomSheetWithHeaderAndFooter(hideFooter = true) {
         Text(
             text = "How are you doing?",
             style = MaterialTheme.typography.headlineMedium,
@@ -153,6 +154,7 @@ private fun MoodItem(
 private fun SelectMoodBottomSheetPreview() {
     EchoJournalTheme {
         SelectMoodBottomSheet(
+            initialMood = null,
             onCancel = {},
             onConfirm = {}
         )
