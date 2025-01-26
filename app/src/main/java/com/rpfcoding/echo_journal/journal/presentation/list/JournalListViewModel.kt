@@ -181,7 +181,12 @@ class JournalListViewModel(
                 ) {
                     _currentJournalPlaying.update { journal }
                     _isPlaying.update { true }
-                    audioPlayer.play(fileManager.getFileFromUri(journal.recordingUri))
+                    audioPlayer.play(
+                        file = fileManager.getFileFromUri(journal.recordingUri),
+                        onComplete = {
+                            _isPlaying.update { false }
+                        }
+                    )
                 } else {
                     val shouldPlay = !_isPlaying.value
                     _isPlaying.update { shouldPlay }
@@ -274,6 +279,10 @@ class JournalListViewModel(
                         _eventChannel.send(JournalListEvent.Error(UiText.DynamicString("Something went wrong.")))
                     }
                 }
+            }
+            is JournalListAction.OnSeekCurrentPlayback -> {
+                val millis = action.seconds.toDuration(DurationUnit.SECONDS).toInt(DurationUnit.MILLISECONDS)
+                audioPlayer.seekTo(millis)
             }
         }
     }

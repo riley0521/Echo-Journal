@@ -15,4 +15,5 @@ sealed interface CreateJournalEntryAction {
     data class OnToggleCancelDialog(val isOpen: Boolean): CreateJournalEntryAction
     data object OnCancelCreateJournalEntry: CreateJournalEntryAction
     data object OnSaveClick: CreateJournalEntryAction
+    data class OnSeekCurrentPlayback(val seconds: Int): CreateJournalEntryAction
 }

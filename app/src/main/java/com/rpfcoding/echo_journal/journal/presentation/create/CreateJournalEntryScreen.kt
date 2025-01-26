@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -197,6 +198,7 @@ private fun CreateJournalEntryScreen(
             .fillMaxSize()
             .background(Color.White)
             .consumeWindowInsets(WindowInsets.ime)
+            .navigationBarsPadding()
     ) {
         Box(
             modifier = Modifier.fillMaxWidth()
@@ -280,13 +282,17 @@ private fun CreateJournalEntryScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
         AudioPlayer(
-            isPlaying = state.isPlaying && state.curPlaybackInSeconds >= state.maxPlaybackInSeconds,
+            isPlaying = state.isPlaying,
             curPlaybackInSeconds = state.curPlaybackInSeconds,
             maxPlaybackInSeconds = state.maxPlaybackInSeconds,
             moodColors = getMoodColors(state.selectedMood ?: Mood.NEUTRAL),
             onToggle = {
                 onAction(CreateJournalEntryAction.OnToggleAudioPlayer)
             },
+            onValueChange = {
+                onAction(CreateJournalEntryAction.OnSeekCurrentPlayback(it))
+            },
+            enableSlider = true,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -691,6 +697,7 @@ private fun CreateJournalEntryScreenPreview() {
                     }
                     CreateJournalEntryAction.OnCancelCreateJournalEntry -> {}
                     CreateJournalEntryAction.OnSaveClick -> {}
+                    is CreateJournalEntryAction.OnSeekCurrentPlayback -> {}
                 }
             }
         )

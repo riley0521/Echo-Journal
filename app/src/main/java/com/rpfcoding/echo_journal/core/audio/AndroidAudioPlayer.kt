@@ -29,7 +29,7 @@ class AndroidAudioPlayer(
     private var currentAudioUri: Uri? = null
     private var playbackJob: Job? = null
 
-    override fun play(file: File, shouldPlayImmediately: Boolean) {
+    override fun play(file: File, onComplete: () -> Unit, shouldPlayImmediately: Boolean) {
 
         val audioUri = file.toUri()
         if (currentAudioUri != null) {
@@ -47,6 +47,9 @@ class AndroidAudioPlayer(
 
             setOnCompletionListener {
                 resetJob()
+                this.seekTo(0)
+                _curPlaybackInSeconds.update { 0L }
+                onComplete()
             }
         }
     }
@@ -89,5 +92,9 @@ class AndroidAudioPlayer(
 
     override fun stopAndResetPlayer() {
         resetAllState()
+    }
+
+    override fun seekTo(millis: Int) {
+        player?.seekTo(millis)
     }
 }

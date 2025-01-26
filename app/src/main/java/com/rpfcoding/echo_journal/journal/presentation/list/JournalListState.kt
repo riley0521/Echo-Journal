@@ -17,7 +17,7 @@ data class JournalListState(
     val currentFilePlaying: String? = null,
     val isPlaying: Boolean = false,
     val curPlaybackInSeconds: Long = 0,
-    val filteredTopics: JournalFilterType.Topics = JournalFilterType.Topics(dummyTopics),
+    val filteredTopics: JournalFilterType.Topics = JournalFilterType.Topics(emptySet()),
     val filteredMoods: JournalFilterType.Moods = getMoodsFilterType()
 )
 

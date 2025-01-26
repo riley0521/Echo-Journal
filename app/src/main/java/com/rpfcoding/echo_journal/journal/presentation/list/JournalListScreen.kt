@@ -266,14 +266,14 @@ private fun JournalListScreen(
                                 }
                         ) {
                             journals.forEachIndexed { index, journal ->
-                                val isCurrentlyPlaying = state.currentFilePlaying == journal.recordingUri
-                                val isFinished = state.curPlaybackInSeconds >= journal.maxPlaybackInSeconds
+                                val isFileInPlayback = state.currentFilePlaying == journal.recordingUri
                                 JournalItem(
                                     item = journal,
                                     index = index,
                                     isLastItem = index == journals.lastIndex,
-                                    isPlaying = isCurrentlyPlaying && state.isPlaying && isFinished,
-                                    curPlaybackInSeconds = if (isCurrentlyPlaying) {
+                                    isFileInPlayback = isFileInPlayback,
+                                    isPlaying = state.isPlaying,
+                                    curPlaybackInSeconds = if (isFileInPlayback) {
                                         state.curPlaybackInSeconds
                                     } else 0,
                                     onTopicClick = {
@@ -281,6 +281,9 @@ private fun JournalListScreen(
                                     },
                                     onTogglePlayback = {
                                         onAction(JournalListAction.OnTogglePlayback(journal))
+                                    },
+                                    onSeekPlayback = {
+                                        onAction(JournalListAction.OnSeekCurrentPlayback(it))
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 )
@@ -319,17 +322,27 @@ private fun EmptyJournalContent(
     }
 }
 
+/**
+ * @param index Index of this composable in a list.
+ * @param isLastItem if the item is on the last position of the list.
+ * @param isFileInPlayback Set to true if the media player is currently playing the recording file of the journal.
+ * If true, we can seek the slider to adjust current position.
+ * @param onTopicClick Lambda will be triggered if you click topic on the topics of the journal.
+ * @param onTogglePlayback Toggle to start/pause the recording file.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun JournalItem(
     item: Journal,
     index: Int,
     isLastItem: Boolean,
+    isFileInPlayback: Boolean,
     isPlaying: Boolean,
     curPlaybackInSeconds: Long,
     onTopicClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    onTogglePlayback: () -> Unit = {}
+    onTogglePlayback: () -> Unit = {},
+    onSeekPlayback: (Int) -> Unit = {}
 ) {
     var height by remember {
         mutableIntStateOf(0)
@@ -407,12 +420,13 @@ private fun JournalItem(
             Spacer(modifier = Modifier.height(6.dp))
 
             AudioPlayer(
-                isPlaying = isPlaying,
+                isPlaying = isPlaying && isFileInPlayback,
                 curPlaybackInSeconds = curPlaybackInSeconds,
                 maxPlaybackInSeconds = item.maxPlaybackInSeconds,
                 moodColors = getMoodColors(item.mood),
                 onToggle = { onTogglePlayback() },
-                onValueChange = {}, // TODO
+                onValueChange = onSeekPlayback,
+                enableSlider = isFileInPlayback,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -551,6 +565,7 @@ private fun JournalListScreenPreview() {
                     JournalListAction.OnFinishRecordingClick -> {
                         state = state.copy(isRecordBottomSheetOpened = false)
                     }
+                    is JournalListAction.OnSeekCurrentPlayback -> {}
                 }
             }
         )
@@ -577,6 +592,7 @@ private fun JournalItemPreview() {
             item = dummyJournal(),
             index = 0,
             isLastItem = false,
+            isFileInPlayback = false,
             isPlaying = false,
             curPlaybackInSeconds = 0,
             onTopicClick = {},

@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 class CreateJournalEntryViewModel(
     private val dataSource: LocalJournalDataSource,
@@ -54,6 +56,9 @@ class CreateJournalEntryViewModel(
         val recordingFile = fileManager.getFileFromUri(fileUri)
         audioPlayer.play(
             file = recordingFile,
+            onComplete = {
+                _state.update { it.copy(isPlaying = false) }
+            },
             shouldPlayImmediately = false
         )
 
@@ -183,6 +188,10 @@ class CreateJournalEntryViewModel(
                         _eventChannel.send(CreateJournalEntryEvent.Error(UiText.DynamicString("Something went wrong.")))
                     }
                 }
+            }
+            is CreateJournalEntryAction.OnSeekCurrentPlayback -> {
+                val millis = action.seconds.toDuration(DurationUnit.SECONDS).toInt(DurationUnit.MILLISECONDS)
+                audioPlayer.seekTo(millis)
             }
         }
     }

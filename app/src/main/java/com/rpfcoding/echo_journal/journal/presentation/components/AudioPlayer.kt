@@ -64,10 +64,20 @@ fun AudioPlayer(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
     onValueChange: (Int) -> Unit = {},
-    playerRadius: Dp = 999.dp
+    playerRadius: Dp = 999.dp,
+    enableSlider: Boolean = false
 ) {
-    var sliderValue by remember(curPlaybackInSeconds) {
-        mutableFloatStateOf(curPlaybackInSeconds.toFloat())
+    var sliderValue by remember {
+        mutableFloatStateOf(0f)
+    }
+    var seekingNewValue by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(curPlaybackInSeconds, seekingNewValue) {
+        if (!seekingNewValue) {
+            sliderValue = curPlaybackInSeconds.toFloat()
+        }
     }
 
     Row(
@@ -100,13 +110,15 @@ fun AudioPlayer(
         Slider(
             value = sliderValue,
             onValueChange = {
+                seekingNewValue = true
                 sliderValue = it
             },
             onValueChangeFinished = {
+                seekingNewValue = false
                 onValueChange(sliderValue.roundToInt())
             },
             valueRange = 0f..(maxPlaybackInSeconds.toFloat()),
-            enabled = false, // TODO: Later in dev, we can implement seeking timestamp
+            enabled = enableSlider,
             thumb = {
                 SliderDefaults.Thumb(
                     interactionSource = remember { MutableInteractionSource() },
