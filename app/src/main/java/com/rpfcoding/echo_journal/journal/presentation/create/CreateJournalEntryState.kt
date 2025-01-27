@@ -11,8 +11,10 @@ data class CreateJournalEntryState(
     val isPlaying: Boolean = false,
     val curPlaybackInSeconds: Long = 0,
     val maxPlaybackInSeconds: Long = 0,
-    val inputTopic: String = "",
     val isCancelCreateJournalEntryDialogOpened: Boolean = false,
-    val allTopics: Set<String> = emptySet(), // Should not contain topics that are already selected.
+    val inputTopic: String = "",
+    val isNewTopic: Boolean = false,
+    val isTopicFieldFocused: Boolean = false,
+    val unselectedTopics: Set<String> = emptySet(),
     val selectedTopics: Set<String> = emptySet(),
 )

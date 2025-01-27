@@ -9,6 +9,7 @@ sealed interface CreateJournalEntryAction {
     data class OnDescriptionChange(val value: String): CreateJournalEntryAction
     data object OnToggleAudioPlayer: CreateJournalEntryAction
     data class OnInputTopic(val value: String): CreateJournalEntryAction
+    data class OnTopicFieldFocusChange(val isFocused: Boolean): CreateJournalEntryAction
     data class OnDeleteTopic(val value: String): CreateJournalEntryAction
     data class OnSelectTopic(val value: String): CreateJournalEntryAction
     data object OnAddNewTopic: CreateJournalEntryAction

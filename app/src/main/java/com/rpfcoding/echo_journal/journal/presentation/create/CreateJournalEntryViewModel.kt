@@ -72,8 +72,21 @@ class CreateJournalEntryViewModel(
             _state,
             dataSource.getAllTopics()
         ) { curState, topics ->
-            val unselectedTopics = topics.filter { !curState.selectedTopics.contains(it) }
-            _state.update { it.copy(allTopics = unselectedTopics.toSet()) }
+            val query = curState.inputTopic
+            val unselectedTopics = if (query.isNotBlank()) {
+                topics.filter { it.contains(query, true) }
+            } else {
+                if (curState.isTopicFieldFocused) {
+                    topics.filter { !curState.selectedTopics.contains(it) }.take(3)
+                } else emptyList()
+            }
+            val isNewTopic = query.isNotBlank() && unselectedTopics.none { it.equals(query, true) }
+            _state.update {
+                it.copy(
+                    unselectedTopics = unselectedTopics.toSet(),
+                    isNewTopic = isNewTopic
+                )
+            }
         }.launchIn(viewModelScope)
 
         combine(
@@ -115,6 +128,9 @@ class CreateJournalEntryViewModel(
             }
             is CreateJournalEntryAction.OnInputTopic -> {
                 _state.update { it.copy(inputTopic = action.value) }
+            }
+            is CreateJournalEntryAction.OnTopicFieldFocusChange -> {
+                _state.update { it.copy(isTopicFieldFocused = action.isFocused) }
             }
             is CreateJournalEntryAction.OnDeleteTopic -> {
                 _state.update {

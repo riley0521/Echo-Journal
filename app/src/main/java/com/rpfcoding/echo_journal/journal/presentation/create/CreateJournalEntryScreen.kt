@@ -15,17 +15,14 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -41,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -52,16 +48,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -71,7 +62,8 @@ import com.rpfcoding.echo_journal.core.presentation.ui.ObserveAsEvents
 import com.rpfcoding.echo_journal.core.presentation.ui.showToastStr
 import com.rpfcoding.echo_journal.journal.domain.Mood
 import com.rpfcoding.echo_journal.journal.presentation.components.AudioPlayer
-import com.rpfcoding.echo_journal.journal.presentation.components.Topic
+import com.rpfcoding.echo_journal.journal.presentation.components.TopicFilterDropdown
+import com.rpfcoding.echo_journal.journal.presentation.components.TopicsAndInput
 import com.rpfcoding.echo_journal.journal.presentation.util.getMoodColors
 import com.rpfcoding.echo_journal.journal.presentation.util.getResIdByMood
 import kotlinx.coroutines.launch
@@ -115,9 +107,6 @@ private fun CreateJournalEntryScreen(
     val color = Color(0xffc1c3ce)
     var topicsHeight by remember {
         mutableIntStateOf(0)
-    }
-    var isTopicsFieldFocused by remember {
-        mutableStateOf(false)
     }
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -182,8 +171,8 @@ private fun CreateJournalEntryScreen(
                     }
                     TextButton(
                         onClick = {
-                            onAction(CreateJournalEntryAction.OnCancelCreateJournalEntry)
                             onAction(CreateJournalEntryAction.OnToggleCancelDialog(false))
+                            onAction(CreateJournalEntryAction.OnCancelCreateJournalEntry)
                         }
                     ) {
                         Text(text = "Yes")
@@ -322,25 +311,18 @@ private fun CreateJournalEntryScreen(
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
-                    state.selectedTopics.forEach {
-                        Topic(
-                            text = it,
-                            onClick = {},
-                            isDeletable = true,
-                            onDelete = {
-                                onAction(CreateJournalEntryAction.OnDeleteTopic(it))
-                            }
-                        )
-                    }
-                    TopicTextField(
-                        value = state.inputTopic,
-                        onValueChange = {
+                    TopicsAndInput(
+                        color = color,
+                        topics = state.selectedTopics,
+                        input = state.inputTopic,
+                        onInputChange = {
                             onAction(CreateJournalEntryAction.OnInputTopic(it))
                         },
-                        hintColor = color,
-                        modifier = Modifier.weight(1f),
+                        onDelete = {
+                            onAction(CreateJournalEntryAction.OnDeleteTopic(it))
+                        },
                         onFocusChange = {
-                            isTopicsFieldFocused = it
+                            onAction(CreateJournalEntryAction.OnTopicFieldFocusChange(it))
                         }
                     )
                 }
@@ -357,26 +339,24 @@ private fun CreateJournalEntryScreen(
                         .padding(horizontal = 16.dp)
                 )
             }
-            if (state.inputTopic.isNotBlank()) {
-                TopicFilterDropdown(
-                    query = state.inputTopic,
-                    topics = state.allTopics,
-                    onTopicClick = {
-                        onAction(CreateJournalEntryAction.OnSelectTopic(it))
-                    },
-                    onCreateNewTopicClick = {
-                        onAction(CreateJournalEntryAction.OnAddNewTopic)
-                    },
-                    isFocused = isTopicsFieldFocused,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .offset {
-                            IntOffset(0 , topicsHeight + 8)
-                        }
-                        .padding(horizontal = 16.dp)
-                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(10.dp))
-                )
-            }
+            TopicFilterDropdown(
+                query = state.inputTopic,
+                filteredTopics = state.unselectedTopics,
+                onTopicClick = {
+                    onAction(CreateJournalEntryAction.OnSelectTopic(it))
+                },
+                isNewTopic = state.isNewTopic,
+                onCreateNewTopicClick = {
+                    onAction(CreateJournalEntryAction.OnAddNewTopic)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .offset {
+                        IntOffset(0 , topicsHeight + 8)
+                    }
+                    .padding(horizontal = 16.dp)
+                    .shadow(elevation = 8.dp, shape = RoundedCornerShape(10.dp))
+            )
         }
         CancelAndSaveButton(
             canSave = state.canSave,
@@ -393,158 +373,7 @@ private fun CreateJournalEntryScreen(
     }
 }
 
-@Composable
-private fun TopicTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    hintColor: Color,
-    modifier: Modifier = Modifier,
-    onFocusChange: (Boolean) -> Unit = {}
-) {
-    Column(
-        modifier = modifier
-    ) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            textStyle = MaterialTheme.typography.bodyMedium,
-            decorationBox = { innerBox ->
-                Box(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    if (value.isBlank()) {
-                        Text(
-                            text = "Topic",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = hintColor
-                        )
-                    }
-                    innerBox()
-                }
-            },
-            modifier = Modifier.onFocusChanged {
-                onFocusChange(it.hasFocus)
-            }
-        )
-    }
-}
 
-@Composable
-private fun TopicFilterDropdown(
-    query: String,
-    topics: Set<String>,
-    onTopicClick: (String) -> Unit,
-    onCreateNewTopicClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(10.dp),
-    itemVerticalPadding: Dp = 10.dp,
-    isFocused: Boolean = false
-) {
-    val density = LocalDensity.current
-    var itemHeight by remember {
-        mutableIntStateOf(0)
-    }
-    var addItemHeight by remember {
-        mutableIntStateOf(0)
-    }
-    val filteredTopics = remember(query, topics, isFocused) {
-        if (query.isNotBlank()) {
-            topics.filter {
-                it.contains(query, true)
-            }
-        } else {
-            if (isFocused) {
-                topics.take(3)
-            } else emptyList()
-        }
-    }
-    val isNewTopic = query.isNotBlank() && filteredTopics.none { it.equals(query, true) }
-
-    LaunchedEffect(filteredTopics, isNewTopic) {
-        if (filteredTopics.isEmpty()) {
-            itemHeight = 0
-        }
-        if (!isNewTopic) {
-            addItemHeight = 0
-        }
-    }
-
-    Box(
-        modifier = modifier
-            .heightIn(
-                max = with(density) {
-                    val doubledVerticalPadding = itemVerticalPadding * 2
-
-                    ((itemHeight.toDp() + doubledVerticalPadding) * 3) + (addItemHeight.toDp() + doubledVerticalPadding)
-                }
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(shape)
-                .background(Color.White)
-                .verticalScroll(rememberScrollState())
-        ) {
-            filteredTopics.forEach { topic ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            onTopicClick(topic)
-                        }
-                        .padding(horizontal = 12.dp, vertical = itemVerticalPadding)
-                        .onGloballyPositioned {
-                            if (itemHeight == 0) {
-                                itemHeight = it.size.height
-                            }
-                        },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "#",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = topic,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
-            }
-            if (isNewTopic) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            onCreateNewTopicClick()
-                        }
-                        .padding(horizontal = 12.dp, vertical = itemVerticalPadding)
-                        .onGloballyPositioned {
-                            if (addItemHeight == 0) {
-                                addItemHeight = it.size.height
-                            }
-                        },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "+",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Create '$query'",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun DescriptionTextField(
@@ -629,22 +458,27 @@ private fun CancelAndSaveButton(
 @Composable
 private fun CreateJournalEntryScreenPreview() {
     EchoJournalTheme {
-        var otherTopics by remember {
+        var allTopics by remember {
            mutableStateOf<Set<String>>(setOf("Jack", "Jared", "Jasper", "January", "Janitor", "Jane", "Jaa", "Jab", "Jaden", "Jagger", "Jah", "Jai", "Jaju", "Jakal", "Jalam", "Jamal"))
         }
         var state by remember {
             mutableStateOf(
                 CreateJournalEntryState(
-                    allTopics = otherTopics,
                     selectedTopics = setOf("Work", "Conundrum")
                 )
             )
         }
 
         fun filterSelectedTopics() {
-            val unselectedTopics = otherTopics.filter { !state.selectedTopics.contains(it) }
+            val unselectedTopics = if (state.inputTopic.isNotBlank()) {
+                allTopics.filter { it.contains(state.inputTopic, true) }
+            } else {
+                if (state.isTopicFieldFocused) {
+                    allTopics.filter { !state.selectedTopics.contains(it) }.take(3)
+                } else emptyList()
+            }
             state = state.copy(
-                allTopics = unselectedTopics.toSet()
+                unselectedTopics = unselectedTopics.toSet()
             )
         }
 
@@ -653,7 +487,17 @@ private fun CreateJournalEntryScreenPreview() {
             onAction = { action ->
                 when (action) {
                     is CreateJournalEntryAction.OnInputTopic -> {
-                        state = state.copy(inputTopic = action.value)
+                        val isNewTopic = action.value.isNotBlank() && allTopics.none {
+                            it.equals(action.value, true)
+                        }
+                        state = state.copy(
+                            inputTopic = action.value,
+                            isNewTopic = isNewTopic
+                        )
+                        filterSelectedTopics()
+                    }
+                    is CreateJournalEntryAction.OnTopicFieldFocusChange -> {
+                        state = state.copy(isTopicFieldFocused = action.isFocused)
                     }
                     is CreateJournalEntryAction.OnDeleteTopic -> {
                         state = state.copy(
@@ -670,10 +514,9 @@ private fun CreateJournalEntryScreenPreview() {
                     }
                     CreateJournalEntryAction.OnAddNewTopic -> {
                         val newTopic = state.inputTopic.trim().replaceFirstChar { it.uppercase() }
-                        otherTopics = otherTopics + newTopic
+                        allTopics = allTopics + newTopic
                         state = state.copy(
                             selectedTopics = state.selectedTopics + newTopic,
-                            allTopics = otherTopics,
                             inputTopic = ""
                         )
                         filterSelectedTopics()
