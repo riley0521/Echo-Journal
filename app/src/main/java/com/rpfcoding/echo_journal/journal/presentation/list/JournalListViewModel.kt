@@ -264,9 +264,6 @@ class JournalListViewModel(
                     }
 
                     try {
-                        requireNotNull(newJournalId)
-                        requireNotNull(newJournalUri)
-
                         _eventChannel.send(
                             JournalListEvent.CreateJournalSuccess(
                                 id = newJournalId!!,

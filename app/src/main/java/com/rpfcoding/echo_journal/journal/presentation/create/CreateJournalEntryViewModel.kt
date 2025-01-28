@@ -30,8 +30,8 @@ class CreateJournalEntryViewModel(
     savedStateHandle: SavedStateHandle
 ): ViewModel() {
 
-    private val id = savedStateHandle.get<String>("id")
-    private val fileUri = savedStateHandle.get<String>("fileUri")
+    private val id = savedStateHandle.get<String>("id")!!
+    private val fileUri = savedStateHandle.get<String>("fileUri")!!
 
     private var isLoaded = false
     private val _state = MutableStateFlow(CreateJournalEntryState())
@@ -51,8 +51,6 @@ class CreateJournalEntryViewModel(
     val events = _eventChannel.receiveAsFlow()
 
     private fun loadRecordingFile() {
-        requireNotNull(fileUri)
-
         val recordingFile = fileManager.getFileFromUri(fileUri)
         audioPlayer.play(
             file = recordingFile,
@@ -115,7 +113,6 @@ class CreateJournalEntryViewModel(
             }
             CreateJournalEntryAction.OnCancelCreateJournalEntry -> {
                 viewModelScope.launch {
-                    requireNotNull(fileUri)
                     // Delete the created file to not consume space.
                     fileManager.getFileFromUri(fileUri).delete()
 
@@ -184,8 +181,6 @@ class CreateJournalEntryViewModel(
                         val description = state.description
                         val selectedMood = state.selectedMood!!
                         val maxPlaybackInSeconds = state.maxPlaybackInSeconds
-                        requireNotNull(id)
-                        requireNotNull(fileUri)
 
                         val newJournal = Journal(
                             id = id,
