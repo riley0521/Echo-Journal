@@ -174,6 +174,7 @@ class CreateJournalEntryViewModel(
                 _state.update { it.copy(isPlaying = shouldPlay) }
             }
             CreateJournalEntryAction.OnSaveClick -> {
+                audioPlayer.stopAndResetPlayer()
                 viewModelScope.launch {
                     try {
                         val state = _state.value

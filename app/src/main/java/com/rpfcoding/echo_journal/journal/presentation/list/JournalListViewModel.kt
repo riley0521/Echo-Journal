@@ -10,6 +10,7 @@ import com.rpfcoding.echo_journal.journal.domain.Journal
 import com.rpfcoding.echo_journal.journal.domain.LocalJournalDataSource
 import com.rpfcoding.echo_journal.journal.domain.Mood
 import com.rpfcoding.echo_journal.journal.presentation.components.JournalFilterType
+import com.rpfcoding.echo_journal.journal.presentation.components.TopicUi
 import com.rpfcoding.echo_journal.journal.presentation.util.getMoodByName
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -50,44 +51,51 @@ class JournalListViewModel(
             JournalListState()
         )
     private val _journals = dataSource.getAll()
-    private val _journalFilter = MutableStateFlow(JournalFilter())
     private val _currentJournalPlaying = MutableStateFlow<Journal?>(null)
     private val _isPlaying = MutableStateFlow(false)
 
     private var newJournalId: String? = null
     private var newJournalUri: String? = null
 
-    data class JournalFilter(
-        val moods: Set<Mood> = emptySet(),
-        val topics: Set<String> = emptySet()
-    )
-
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun init() {
         combine(
             _journals,
-            _journalFilter
-        ) { journals, filter ->
+            _state
+        ) { journals, curState ->
             val filteredJournals = journals.filter { item ->
-                var allMoods = Mood.entries.toSet()
+                var allMoods = emptySet<Mood>()
                 var allTopics = emptySet<String>()
 
-                if (filter.moods.isNotEmpty()) {
-                    allMoods = filter.moods
+                if (curState.filteredMoods.moods.any { it.isSelected }) {
+                    allMoods = curState.filteredMoods.moods.mapNotNull {
+                        if (it.isSelected) {
+                            getMoodByName(it.name)
+                        } else null
+                    }.toSet()
                 }
-                if (filter.topics.isNotEmpty()) {
-                    allTopics = filter.topics
+                if (curState.filteredTopics.topics.any { it.isSelected }) {
+                    allTopics = curState.filteredTopics.topics.mapNotNull {
+                        if (it.isSelected) {
+                            it.name
+                        } else null
+                    }.toSet()
                 }
 
-                if (allTopics.isNotEmpty()) {
-                    item.topics.any { allTopics.contains(it) } || allMoods.contains(item.mood)
+                val hasMood = if (allMoods.isEmpty()) {
+                    true
                 } else {
                     allMoods.contains(item.mood)
                 }
+                if (allTopics.isNotEmpty()) {
+                    item.topics.any { allTopics.contains(it) } || hasMood
+                } else {
+                    hasMood
+                }
             }
 
-            _state.update { curState ->
-                curState.copy(
+            _state.update { stateToUpdate ->
+                stateToUpdate.copy(
                     dateToJournalsMap = filteredJournals
                         .groupBy { it.dateTimeCreated.toLocalDate() }
                         .toSortedMap(compareByDescending { it })
@@ -95,11 +103,24 @@ class JournalListViewModel(
             }
         }.launchIn(viewModelScope)
 
-        dataSource
-            .getAllTopics()
-            .onEach { topics ->
-                _state.update { it.copy(allTopics = topics) }
-            }.launchIn(viewModelScope)
+        combine(
+            _state,
+            dataSource.getAllTopics()
+        ) { curState, topics ->
+            val selectedTopics = curState.filteredTopics.topics.filter { it.isSelected }.map { it.name }
+            val mappedTopics = topics.map {
+                TopicUi(
+                    name = it,
+                    isSelected = selectedTopics.contains(it)
+                )
+            }.toSet()
+
+            _state.update {
+                it.copy(
+                    filteredTopics = JournalFilterType.Topics(mappedTopics)
+                )
+            }
+        }.launchIn(viewModelScope)
 
         _isPlaying
             .flatMapLatest { isPlaying ->
@@ -140,36 +161,33 @@ class JournalListViewModel(
                 _state.update { it.copy(filteredTopics = JournalFilterType.Topics(emptySet())) }
             }
             is JournalListAction.OnToggleMoodFilter -> {
-                _journalFilter.update {
+                _state.update {
                     it.copy(
-                        moods = action.filter.moods.mapNotNull { moodUi ->
-                            if (moodUi.isSelected) {
-                                getMoodByName(moodUi.name)
-                            } else null
-                        }.toSet()
+                        filteredMoods = action.filter
                     )
                 }
             }
             is JournalListAction.OnToggleTopicFilter -> {
-                _journalFilter.update {
+                _state.update {
                     it.copy(
-                        topics = action.filter.topics.mapNotNull { topic ->
-                            if (topic.isSelected) {
-                                topic.name
-                            } else null
-                        }.toSet()
+                        filteredTopics = action.filter
                     )
                 }
             }
             is JournalListAction.OnTopicClick -> {
-                val filters = _journalFilter.value
-                if (filters.topics.contains(action.topic)) {
+                val topics = _state.value.filteredTopics.topics.filter { it.isSelected }.map { it.name }
+                if (topics.contains(action.topic)) {
                     return
                 }
 
-                _journalFilter.update {
+                val updatedTopics = _state.value.filteredTopics.topics.map {
+                    if (it.name == action.topic) {
+                        it.copy(isSelected = true)
+                    } else it
+                }.toSet()
+                _state.update {
                     it.copy(
-                        topics = it.topics + action.topic
+                        filteredTopics = JournalFilterType.Topics(updatedTopics)
                     )
                 }
             }
