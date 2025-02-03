@@ -16,8 +16,7 @@ An android application for making journal with your voice.
 
 ## Features
 
-### Moods
-![https://github.com/riley0521/Echo-Journal/blob/master/screenshots/Moods.PNG]
+### ![Moods](https://github.com/riley0521/Echo-Journal/blob/master/screenshots/Moods.PNG) Moods
 
 ### List of journal
 - Display all audio log entry with their mood, sorted by date.
