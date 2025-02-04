@@ -39,7 +39,7 @@ fun BottomSheetWithHeaderAndFooter(
                 modifier = Modifier
                     .size(32.dp, 4.dp)
                     .clip(RoundedCornerShape(100.dp))
-                    .background(color = Color(0xffc1c3ce))
+                    .background(color = MaterialTheme.colorScheme.tertiary)
             )
         }
         Spacer(modifier = Modifier.height(16.dp))

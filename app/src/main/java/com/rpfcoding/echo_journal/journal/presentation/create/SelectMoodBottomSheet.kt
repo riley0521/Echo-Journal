@@ -1,9 +1,6 @@
 package com.rpfcoding.echo_journal.journal.presentation.create
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
@@ -27,16 +23,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalTheme
 import com.rpfcoding.echo_journal.journal.domain.Mood
 import com.rpfcoding.echo_journal.journal.presentation.components.BottomSheetWithHeaderAndFooter
-import com.rpfcoding.echo_journal.journal.presentation.util.getMoodOutlined
-import com.rpfcoding.echo_journal.journal.presentation.util.getMoodUiByMood
-import com.rpfcoding.echo_journal.journal.presentation.util.getResIdByMood
+import com.rpfcoding.echo_journal.journal.presentation.components.MoodItem
 
 @Composable
 fun SelectMoodBottomSheet(
@@ -113,39 +106,6 @@ fun SelectMoodBottomSheet(
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-    }
-}
-
-@Composable
-private fun MoodItem(
-    mood: Mood,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val name = getMoodUiByMood(mood).name
-    val resId = if (isSelected) getResIdByMood(mood) else getMoodOutlined(mood)
-
-    Column(
-        modifier = modifier
-            .clickable {
-                onClick()
-            },
-        verticalArrangement = Arrangement.Center
-    ) {
-        Image(
-            painter = painterResource(resId),
-            contentDescription = null,
-            modifier = Modifier.size(40.dp)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = name,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.widthIn(min = 40.dp)
-        )
     }
 }
 

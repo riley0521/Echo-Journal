@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -69,6 +70,7 @@ fun TopicFilterDropdown(
                     ((itemHeight.toDp() + doubledVerticalPadding) * 3) + (addItemHeight.toDp() + doubledVerticalPadding)
                 }
             )
+            .shadow(elevation = 8.dp, shape = RoundedCornerShape(10.dp))
     ) {
         Column(
             modifier = Modifier

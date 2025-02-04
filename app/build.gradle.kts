@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.bundles.koin)
 
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.datastore.preference)
 
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)

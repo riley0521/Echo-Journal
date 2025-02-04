@@ -16,4 +16,5 @@ sealed interface JournalListAction {
     data object OnCancelRecordingClick: JournalListAction
     data object OnFinishRecordingClick: JournalListAction
     data class OnSeekCurrentPlayback(val seconds: Int): JournalListAction
+    data object OnNavigateToSettings: JournalListAction
 }

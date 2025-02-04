@@ -24,13 +24,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -86,6 +90,7 @@ import kotlin.random.Random
 @Composable
 fun JournalListScreenRoot(
     onNavigateToCreateJournal: (id: String, fileUri: String) -> Unit,
+    onNavigateToSettings: () -> Unit,
     viewModel: JournalListViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -104,7 +109,12 @@ fun JournalListScreenRoot(
 
     JournalListScreen(
         state = state,
-        onAction = viewModel::onAction
+        onAction = { action ->
+            when (action) {
+                JournalListAction.OnNavigateToSettings -> onNavigateToSettings()
+                else -> viewModel.onAction(action)
+            }
+        }
     )
 }
 
@@ -186,6 +196,29 @@ private fun JournalListScreen(
                     contentDescription = null,
                 )
             }
+        },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Your EchoJournal",
+                        style = MaterialTheme.typography.headlineLarge
+                    )
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            onAction(JournalListAction.OnNavigateToSettings)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = null
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            )
         }
     ) { padding ->
         LazyColumn(
@@ -195,13 +228,6 @@ private fun JournalListScreen(
             contentPadding = PaddingValues(16.dp)
         ) {
             item {
-                Text(
-                    text = "Your EchoJournal",
-                    style = MaterialTheme.typography.headlineLarge
-                )
-            }
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
                 FlowRow(
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -566,6 +592,7 @@ private fun JournalListScreenPreview() {
                         state = state.copy(isRecordBottomSheetOpened = false)
                     }
                     is JournalListAction.OnSeekCurrentPlayback -> {}
+                    JournalListAction.OnNavigateToSettings -> {}
                 }
             }
         )

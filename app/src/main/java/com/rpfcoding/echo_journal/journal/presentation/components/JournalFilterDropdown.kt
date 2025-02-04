@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalTheme
 import com.rpfcoding.echo_journal.journal.domain.Mood
+import com.rpfcoding.echo_journal.journal.presentation.util.getMoodByName
 import com.rpfcoding.echo_journal.journal.presentation.util.getMoodUiByMood
 
 data class MoodUi(
@@ -87,6 +88,29 @@ sealed interface JournalFilterType {
             is Topics -> topics.filter { it.isSelected }.map { it.name }.sorted()
         }
     }
+
+    fun hasSelected(): Boolean {
+        return when (this) {
+            is Moods -> moods.any { it.isSelected }
+            is Topics -> topics.any { it.isSelected }
+        }
+    }
+}
+
+fun JournalFilterType.Moods.mapSelectedToMoods(): Set<Mood> {
+    return moods.mapNotNull {
+        if (it.isSelected) {
+            getMoodByName(it.name)
+        } else null
+    }.toSet()
+}
+
+fun JournalFilterType.Topics.mapSelectedToSet(): Set<String> {
+    return topics.mapNotNull {
+        if (it.isSelected) {
+            it.name
+        } else null
+    }.toSet()
 }
 
 fun getMoodsFilterType(): JournalFilterType.Moods {
@@ -123,7 +147,7 @@ fun <T : JournalFilterType> JournalFilterDropdown(
     val dropdownSelectedBackgroundColor = if (expanded) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
-        Color(0xffc1c3ce)
+        MaterialTheme.colorScheme.tertiary
     }
     val shape = RoundedCornerShape(999.dp)
     val backgroundModifier = if (expanded) {
@@ -155,16 +179,7 @@ fun <T : JournalFilterType> JournalFilterDropdown(
             modifier = Modifier
                 .width(menuWidth)
                 .heightIn(
-                    min = itemHeightDp.times(
-                        filterType
-                            .getSize()
-                            .coerceAtMost(3)
-                    ),
-                    max = itemHeightDp.times(
-                        filterType
-                            .getSize()
-                            .coerceAtMost(5)
-                    )
+                    max = itemHeightDp.times(5)
                 ),
             expanded = expanded,
             onDismissRequest = {

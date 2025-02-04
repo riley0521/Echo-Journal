@@ -18,7 +18,8 @@ private val LightColorScheme = lightColorScheme(
     surfaceVariant = SurfaceVariant,
     secondary = Secondary,
     surfaceContainer = SurfaceContainer,
-    surfaceTint = SurfaceTint
+    surfaceTint = SurfaceTint,
+    tertiary = HintColor
 )
 
 @Composable

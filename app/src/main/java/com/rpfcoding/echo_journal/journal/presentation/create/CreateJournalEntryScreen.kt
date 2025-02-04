@@ -47,7 +47,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -104,7 +103,6 @@ private fun CreateJournalEntryScreen(
     state: CreateJournalEntryState,
     onAction: (CreateJournalEntryAction) -> Unit
 ) {
-    val color = Color(0xffc1c3ce)
     var topicsHeight by remember {
         mutableIntStateOf(0)
     }
@@ -261,7 +259,7 @@ private fun CreateJournalEntryScreen(
                             Text(
                                 text = "Add Title...",
                                 style = MaterialTheme.typography.headlineLarge,
-                                color = color
+                                color = MaterialTheme.colorScheme.tertiary
                             )
                         }
                         innerBox()
@@ -307,12 +305,12 @@ private fun CreateJournalEntryScreen(
                 ) {
                     Text(
                         text = "#",
-                        color = color,
+                        color = MaterialTheme.colorScheme.tertiary,
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
                     TopicsAndInput(
-                        color = color,
+                        color = MaterialTheme.colorScheme.tertiary,
                         topics = state.selectedTopics,
                         input = state.inputTopic,
                         onInputChange = {
@@ -332,7 +330,7 @@ private fun CreateJournalEntryScreen(
                     onValueChange = {
                         onAction(CreateJournalEntryAction.OnDescriptionChange(it))
                     },
-                    tint = color,
+                    tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -355,7 +353,6 @@ private fun CreateJournalEntryScreen(
                         IntOffset(0 , topicsHeight + 8)
                     }
                     .padding(horizontal = 16.dp)
-                    .shadow(elevation = 8.dp, shape = RoundedCornerShape(10.dp))
             )
         }
         CancelAndSaveButton(

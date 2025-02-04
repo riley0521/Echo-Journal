@@ -11,7 +11,8 @@ import com.rpfcoding.echo_journal.journal.domain.LocalJournalDataSource
 import com.rpfcoding.echo_journal.journal.domain.Mood
 import com.rpfcoding.echo_journal.journal.presentation.components.JournalFilterType
 import com.rpfcoding.echo_journal.journal.presentation.components.TopicUi
-import com.rpfcoding.echo_journal.journal.presentation.util.getMoodByName
+import com.rpfcoding.echo_journal.journal.presentation.components.mapSelectedToMoods
+import com.rpfcoding.echo_journal.journal.presentation.components.mapSelectedToSet
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,19 +68,11 @@ class JournalListViewModel(
                 var allMoods = emptySet<Mood>()
                 var allTopics = emptySet<String>()
 
-                if (curState.filteredMoods.moods.any { it.isSelected }) {
-                    allMoods = curState.filteredMoods.moods.mapNotNull {
-                        if (it.isSelected) {
-                            getMoodByName(it.name)
-                        } else null
-                    }.toSet()
+                if (curState.filteredMoods.hasSelected()) {
+                    allMoods = curState.filteredMoods.mapSelectedToMoods()
                 }
-                if (curState.filteredTopics.topics.any { it.isSelected }) {
-                    allTopics = curState.filteredTopics.topics.mapNotNull {
-                        if (it.isSelected) {
-                            it.name
-                        } else null
-                    }.toSet()
+                if (curState.filteredTopics.hasSelected()) {
+                    allTopics = curState.filteredTopics.mapSelectedToSet()
                 }
 
                 val hasMood = if (allMoods.isEmpty()) {
@@ -88,7 +81,7 @@ class JournalListViewModel(
                     allMoods.contains(item.mood)
                 }
                 if (allTopics.isNotEmpty()) {
-                    item.topics.any { allTopics.contains(it) } || hasMood
+                    item.topics.any { allTopics.contains(it) } && hasMood
                 } else {
                     hasMood
                 }
@@ -155,7 +148,13 @@ class JournalListViewModel(
     fun onAction(action: JournalListAction) {
         when (action) {
             JournalListAction.OnClearMoodFilter -> {
-                _state.update { it.copy(filteredMoods = JournalFilterType.Moods(emptySet())) }
+                val unselectedMoods = _state.value.filteredMoods.moods.map {
+                    it.copy(isSelected = false)
+                }.toSet()
+
+                _state.update {
+                    it.copy(filteredMoods = JournalFilterType.Moods(unselectedMoods))
+                }
             }
             JournalListAction.OnClearTopicFilter -> {
                 _state.update { it.copy(filteredTopics = JournalFilterType.Topics(emptySet())) }
@@ -299,6 +298,7 @@ class JournalListViewModel(
                 val millis = action.seconds.toDuration(DurationUnit.SECONDS).toInt(DurationUnit.MILLISECONDS)
                 audioPlayer.seekTo(millis)
             }
+            else -> Unit
         }
     }
 }

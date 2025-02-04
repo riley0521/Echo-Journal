@@ -16,6 +16,7 @@ room = "2.6.1"
 navigation = "2.8.5"
 kotlinSerializationPlugin = "2.1.0"
 kotlinSerializationJson = "1.8.0"
+dataStorePref = "1.1.2"
 
 minSdk = "24"
 compileSdk = "35"
@@ -53,6 +54,7 @@ koin-android = { module = "io.insert-koin:koin-android" }
 koin-compose = { module = "io.insert-koin:koin-androidx-compose" }
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinSerializationJson" }
+datastore-preference = { module = "androidx.datastore:datastore-preferences", version.ref = "dataStorePref" }
 
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }

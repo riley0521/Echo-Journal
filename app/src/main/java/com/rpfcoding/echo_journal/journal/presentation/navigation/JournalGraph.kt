@@ -12,4 +12,7 @@ object JournalGraph {
 
     @Serializable
     data class CreateJournalScreen(val id: String, val fileUri: String)
+
+    @Serializable
+    data object JournalSettings
 }

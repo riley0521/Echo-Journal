@@ -6,12 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.rpfcoding.echo_journal.core.domain.audio.AudioPlayer
 import com.rpfcoding.echo_journal.core.domain.file.FileManager
 import com.rpfcoding.echo_journal.core.presentation.ui.UiText
+import com.rpfcoding.echo_journal.journal.domain.GetUnselectedTopicsUseCase
 import com.rpfcoding.echo_journal.journal.domain.Journal
+import com.rpfcoding.echo_journal.journal.domain.JournalPreferenceManager
 import com.rpfcoding.echo_journal.journal.domain.LocalJournalDataSource
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -27,6 +30,8 @@ class CreateJournalEntryViewModel(
     private val dataSource: LocalJournalDataSource,
     private val audioPlayer: AudioPlayer,
     private val fileManager: FileManager,
+    private val journalPreferenceManager: JournalPreferenceManager,
+    private val getUnselectedTopicsUseCase: GetUnselectedTopicsUseCase,
     savedStateHandle: SavedStateHandle
 ): ViewModel() {
 
@@ -38,6 +43,7 @@ class CreateJournalEntryViewModel(
     val state = _state
         .onStart {
             if (!isLoaded) {
+                loadDefaultMoodAndTopics()
                 loadRecordingFile()
             }
             initObservers()
@@ -49,6 +55,16 @@ class CreateJournalEntryViewModel(
         )
     private val _eventChannel = Channel<CreateJournalEntryEvent>()
     val events = _eventChannel.receiveAsFlow()
+
+    private suspend fun loadDefaultMoodAndTopics() {
+        val journalPref = journalPreferenceManager.get().firstOrNull()
+        _state.update {
+            it.copy(
+                selectedMood = journalPref?.selectedMood,
+                selectedTopics = journalPref?.selectedTopics.orEmpty()
+            )
+        }
+    }
 
     private fun loadRecordingFile() {
         val recordingFile = fileManager.getFileFromUri(fileUri)
@@ -70,19 +86,16 @@ class CreateJournalEntryViewModel(
             _state,
             dataSource.getAllTopics()
         ) { curState, topics ->
-            val query = curState.inputTopic
-            val unselectedTopics = if (query.isNotBlank()) {
-                topics.filter { it.contains(query, true) }
-            } else {
-                if (curState.isTopicFieldFocused) {
-                    topics.filter { !curState.selectedTopics.contains(it) }.take(3)
-                } else emptyList()
-            }
-            val isNewTopic = query.isNotBlank() && unselectedTopics.none { it.equals(query, true) }
+            val topicInformation = getUnselectedTopicsUseCase(
+                query = curState.inputTopic,
+                shouldTakeItems = curState.isTopicFieldFocused,
+                selectedTopics = curState.selectedTopics,
+                allTopics = topics
+            )
             _state.update {
                 it.copy(
-                    unselectedTopics = unselectedTopics.toSet(),
-                    isNewTopic = isNewTopic
+                    unselectedTopics = topicInformation.unselectedTopics,
+                    isNewTopic = topicInformation.isNewTopic
                 )
             }
         }.launchIn(viewModelScope)
@@ -144,7 +157,12 @@ class CreateJournalEntryViewModel(
             }
             CreateJournalEntryAction.OnAddNewTopic -> {
                 viewModelScope.launch {
-                    val newTopic = _state.value.inputTopic.trim().replaceFirstChar { it.uppercase() }
+                    val newTopic = _state
+                        .value
+                        .inputTopic
+                        .trim()
+                        .lowercase()
+                        .replaceFirstChar { it.uppercase() }
                     dataSource.insertTopic(newTopic)
 
                     _state.update {
