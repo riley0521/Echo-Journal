@@ -11,6 +11,7 @@ sealed interface JournalListAction {
     data class OnTopicClick(val topic: String): JournalListAction
     data class OnTogglePlayback(val journal: Journal): JournalListAction
     data class OnRecordPermissionGranted(val isGranted: Boolean): JournalListAction
+    data object OnStartRecordingAlternatively: JournalListAction
     data class OnToggleRecordingBottomSheet(val isOpen: Boolean): JournalListAction
     data object OnToggleRecord: JournalListAction
     data object OnCancelRecordingClick: JournalListAction

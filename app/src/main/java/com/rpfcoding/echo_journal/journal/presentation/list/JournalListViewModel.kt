@@ -220,6 +220,9 @@ class JournalListViewModel(
             is JournalListAction.OnToggleRecordingBottomSheet -> {
                 _state.update { it.copy(isRecordBottomSheetOpened = action.isOpen) }
             }
+            JournalListAction.OnStartRecordingAlternatively -> {
+                _state.update { it.copy(isAlternativeRecordingType = true) }
+            }
             JournalListAction.OnToggleRecord -> {
                 if (!_state.value.canRecord) {
                     return
@@ -254,7 +257,8 @@ class JournalListViewModel(
                     it.copy(
                         isRecordBottomSheetOpened = false,
                         hasStartedRecording = false,
-                        isRecording = false
+                        isRecording = false,
+                        isAlternativeRecordingType = false
                     )
                 }
 
@@ -276,7 +280,8 @@ class JournalListViewModel(
                         it.copy(
                             isRecordBottomSheetOpened = false,
                             hasStartedRecording = false,
-                            isRecording = false
+                            isRecording = false,
+                            isAlternativeRecordingType = false
                         )
                     }
 

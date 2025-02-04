@@ -10,6 +10,7 @@ data class JournalListState(
     val dateToJournalsMap: Map<LocalDate, List<Journal>> = emptyMap(),
     val canRecord: Boolean = false,
     val isRecordBottomSheetOpened: Boolean = false,
+    val isAlternativeRecordingType: Boolean = false,
     val hasStartedRecording: Boolean = false,
     val isRecording: Boolean = false,
     val durationInSeconds: Long = 0L,

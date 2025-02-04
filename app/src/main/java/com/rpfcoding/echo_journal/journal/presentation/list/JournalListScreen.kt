@@ -4,10 +4,15 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -18,15 +23,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -118,7 +125,11 @@ fun JournalListScreenRoot(
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(
+    ExperimentalLayoutApi::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
 private fun JournalListScreen(
     state: JournalListState,
@@ -135,9 +146,18 @@ private fun JournalListScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
     LaunchedEffect(Unit) {
         if (context.hasRecordAudioPermission()) {
             onAction(JournalListAction.OnRecordPermissionGranted(true))
+        }
+    }
+
+    LaunchedEffect(isPressed) {
+        if (!isPressed && state.isAlternativeRecordingType) {
+            onAction(JournalListAction.OnFinishRecordingClick)
         }
     }
 
@@ -180,21 +200,57 @@ private fun JournalListScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    onAction(JournalListAction.OnToggleRecordingBottomSheet(true))
-                    startRecordingIfPermissionGranted()
-                },
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.padding(
-                    bottom = 23.dp
-                )
+            Box(
+                modifier = Modifier
+                    .sizeIn(minWidth = 50.dp, minHeight = 50.dp)
+                    .combinedClickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        enabled = true,
+                        onLongClick = {
+                            onAction(JournalListAction.OnStartRecordingAlternatively)
+                            startRecordingIfPermissionGranted()
+                        },
+                        onClick = {
+                            onAction(JournalListAction.OnToggleRecordingBottomSheet(true))
+                            startRecordingIfPermissionGranted()
+                        }
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                )
+                if (state.hasStartedRecording && state.isAlternativeRecordingType) {
+                    Box(
+                        modifier = Modifier
+                            .size(90.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f))
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(75.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (state.isAlternativeRecordingType) {
+                            Icons.Default.Mic
+                        } else {
+                            Icons.Default.Add
+                        },
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         },
         topBar = {
@@ -546,7 +602,9 @@ private fun JournalListScreenPreview() {
         var state by remember {
             mutableStateOf(
                 JournalListState(
-                    dateToJournalsMap = journals
+                    dateToJournalsMap = journals,
+                    hasStartedRecording = true,
+                    isAlternativeRecordingType = true
                 )
             )
         }
@@ -583,6 +641,9 @@ private fun JournalListScreenPreview() {
                     }
                     is JournalListAction.OnToggleRecordingBottomSheet -> {
                         state = state.copy(isRecordBottomSheetOpened = action.isOpen)
+                    }
+                    JournalListAction.OnStartRecordingAlternatively -> {
+                        state = state.copy(isAlternativeRecordingType = true)
                     }
                     JournalListAction.OnToggleRecord -> {}
                     JournalListAction.OnCancelRecordingClick -> {
