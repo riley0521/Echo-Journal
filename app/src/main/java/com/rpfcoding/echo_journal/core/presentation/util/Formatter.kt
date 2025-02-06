@@ -1,5 +1,8 @@
-package com.rpfcoding.echo_journal.core.util
+package com.rpfcoding.echo_journal.core.presentation.util
 
+import com.rpfcoding.echo_journal.core.domain.util.getHours
+import com.rpfcoding.echo_journal.core.domain.util.getRemainingMinutes
+import com.rpfcoding.echo_journal.core.domain.util.getRemainingSeconds
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

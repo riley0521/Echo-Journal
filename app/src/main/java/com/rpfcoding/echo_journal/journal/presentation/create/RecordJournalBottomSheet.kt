@@ -28,7 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalTheme
-import com.rpfcoding.echo_journal.core.util.formatSecondsToHourMinuteSecond
+import com.rpfcoding.echo_journal.core.presentation.util.formatSecondsToHourMinuteSecond
 import com.rpfcoding.echo_journal.journal.presentation.components.BottomSheetWithHeaderAndFooter
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.hours

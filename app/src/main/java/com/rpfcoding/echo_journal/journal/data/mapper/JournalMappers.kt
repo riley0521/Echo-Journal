@@ -1,8 +1,8 @@
 package com.rpfcoding.echo_journal.journal.data.mapper
 
 import com.rpfcoding.echo_journal.core.database.journal.JournalEntity
-import com.rpfcoding.echo_journal.core.util.toLocalDateTime
-import com.rpfcoding.echo_journal.core.util.toMillis
+import com.rpfcoding.echo_journal.core.domain.util.toLocalDateTime
+import com.rpfcoding.echo_journal.core.domain.util.toMillis
 import com.rpfcoding.echo_journal.journal.domain.Journal
 import com.rpfcoding.echo_journal.journal.domain.Mood
 

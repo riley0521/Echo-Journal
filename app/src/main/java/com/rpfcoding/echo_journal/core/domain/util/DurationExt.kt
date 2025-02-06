@@ -1,4 +1,4 @@
-package com.rpfcoding.echo_journal.core.util
+package com.rpfcoding.echo_journal.core.domain.util
 
 import kotlin.time.Duration
 import kotlin.time.DurationUnit

@@ -1,4 +1,4 @@
-package com.rpfcoding.echo_journal.core.util
+package com.rpfcoding.echo_journal.core.domain.util
 
 import java.time.Instant
 import java.time.LocalDateTime

@@ -77,8 +77,8 @@ import com.rpfcoding.echo_journal.R
 import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalTheme
 import com.rpfcoding.echo_journal.core.presentation.ui.ObserveAsEvents
 import com.rpfcoding.echo_journal.core.presentation.ui.showToastStr
-import com.rpfcoding.echo_journal.core.util.formatLocalDateTimeToHourMinute
-import com.rpfcoding.echo_journal.core.util.getDisplayTextByDate
+import com.rpfcoding.echo_journal.core.presentation.util.formatLocalDateTimeToHourMinute
+import com.rpfcoding.echo_journal.core.presentation.util.getDisplayTextByDate
 import com.rpfcoding.echo_journal.journal.domain.Journal
 import com.rpfcoding.echo_journal.journal.domain.Mood
 import com.rpfcoding.echo_journal.journal.presentation.components.AudioPlayer
