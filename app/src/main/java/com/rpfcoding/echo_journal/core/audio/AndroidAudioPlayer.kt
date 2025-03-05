@@ -67,8 +67,9 @@ class AndroidAudioPlayer(
         playbackJob?.cancel()
         playbackJob = applicationScope.launch {
             while(true) {
+                val curPosition = player?.currentPosition ?: 0
                 _curPlaybackInSeconds.update {
-                    player!!.currentPosition.toDuration(DurationUnit.MILLISECONDS).toLong(DurationUnit.SECONDS)
+                    curPosition.toDuration(DurationUnit.MILLISECONDS).inWholeSeconds
                 }
                 delay(100.milliseconds)
             }

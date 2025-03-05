@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rpfcoding.echo_journal.R
 import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalTheme
+import com.rpfcoding.echo_journal.core.presentation.ui.DevicePreviews
 import com.rpfcoding.echo_journal.core.presentation.ui.ObserveAsEvents
 import com.rpfcoding.echo_journal.core.presentation.ui.showToastStr
 import com.rpfcoding.echo_journal.core.presentation.util.formatLocalDateTimeToHourMinute
@@ -672,7 +673,7 @@ private fun EmptyJournalContentPreview() {
     }
 }
 
-@Preview
+@DevicePreviews
 @Composable
 private fun JournalItemPreview() {
     EchoJournalTheme {

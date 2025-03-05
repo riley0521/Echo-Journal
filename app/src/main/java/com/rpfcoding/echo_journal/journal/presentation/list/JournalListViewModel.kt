@@ -300,10 +300,19 @@ class JournalListViewModel(
                 }
             }
             is JournalListAction.OnSeekCurrentPlayback -> {
-                val millis = action.seconds.toDuration(DurationUnit.SECONDS).toInt(DurationUnit.MILLISECONDS)
-                audioPlayer.seekTo(millis)
+                val millis = action
+                    .seconds
+                    .toDuration(DurationUnit.SECONDS)
+                    .inWholeMilliseconds
+                audioPlayer.seekTo(millis.toInt())
             }
             else -> Unit
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        audioRecorder.stop(discardFile = true)
+        audioPlayer.stopAndResetPlayer()
     }
 }

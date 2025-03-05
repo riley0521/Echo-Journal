@@ -50,7 +50,7 @@ class AndroidAudioRecorder(
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
             setAudioEncodingBitRate(128_000)
             setAudioSamplingRate(44_100)
-            setOutputFile(outputFile!!.absolutePath)
+            setOutputFile(outputFile?.absolutePath.orEmpty())
 
             prepare()
             start()
@@ -85,18 +85,25 @@ class AndroidAudioRecorder(
         resetJob()
     }
 
-    override fun stop(discardFile: Boolean): String {
-        if (discardFile) {
-            outputFile?.delete()
-        }
-
+    private fun resetAllState() {
         recorder?.stop()
         recorder?.reset()
         recorder?.release()
         recorder = null
         resetJob()
         _durationInMillis.update { 0L }
+    }
 
-        return outputFile?.toUri()?.toString().orEmpty()
+    override fun stop(discardFile: Boolean): String {
+        resetAllState()
+
+        if (discardFile) {
+            outputFile?.delete()
+            outputFile = null
+            return ""
+        }
+
+        val outputUri = outputFile?.toUri() ?: return ""
+        return outputUri.toString()
     }
 }

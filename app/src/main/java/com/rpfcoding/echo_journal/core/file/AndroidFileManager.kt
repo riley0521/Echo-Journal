@@ -22,7 +22,7 @@ class AndroidFileManager(
             .extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
             ?.toIntOrNull()
             ?.toDuration(DurationUnit.MILLISECONDS)
-            ?.toLong(DurationUnit.SECONDS)
+            ?.inWholeSeconds
         return duration ?: -1L
     }
 

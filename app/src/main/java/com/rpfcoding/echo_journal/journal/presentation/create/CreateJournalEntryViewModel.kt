@@ -77,7 +77,9 @@ class CreateJournalEntryViewModel(
         )
 
         val durationOfAudio = fileManager.getDurationOfAudioFile(recordingFile)
-        _state.update { it.copy(maxPlaybackInSeconds = durationOfAudio) }
+        if (durationOfAudio > 0) {
+            _state.update { it.copy(maxPlaybackInSeconds = durationOfAudio) }
+        }
         isLoaded = true
     }
 
@@ -220,8 +222,11 @@ class CreateJournalEntryViewModel(
                 }
             }
             is CreateJournalEntryAction.OnSeekCurrentPlayback -> {
-                val millis = action.seconds.toDuration(DurationUnit.SECONDS).toInt(DurationUnit.MILLISECONDS)
-                audioPlayer.seekTo(millis)
+                val millis = action
+                    .seconds
+                    .toDuration(DurationUnit.SECONDS)
+                    .inWholeMilliseconds
+                audioPlayer.seekTo(millis.toInt())
             }
         }
     }
