@@ -36,6 +36,7 @@ An android application for making journal with your voice.
 
 ### Journal widget
 - If we use the widget, it will automatically start recording if user has granted the RECORD_AUDIO permission.
+- ![Create journal widget](https://github.com/riley0521/Echo-Journal/blob/master/screenshots/Create-Journal-Widget.png)
 
 ## License
 ```text

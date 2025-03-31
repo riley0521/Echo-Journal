@@ -14,6 +14,7 @@ val SurfaceContainer = Color(0xff475d92)
 val SurfaceTint = Color(0xff6b7796)
 val BottomSheetSurface = Color(0xfffcfdfe)
 val HintColor = Color(0xffc1c3ce)
+val WidgetBackgroundColor = Color(0xffcbe3ff)
 
 val NeutralPrimary = Color(0xff41b278)
 val NeutralSecondary = Color(0xffb9ddcb)
