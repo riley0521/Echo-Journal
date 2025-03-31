@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -186,6 +187,7 @@ private fun CreateJournalEntryScreen(
             .background(Color.White)
             .consumeWindowInsets(WindowInsets.ime)
             .navigationBarsPadding()
+            .statusBarsPadding()
     ) {
         Box(
             modifier = Modifier.fillMaxWidth()

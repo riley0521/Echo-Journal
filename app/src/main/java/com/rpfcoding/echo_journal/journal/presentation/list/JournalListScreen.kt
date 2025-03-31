@@ -91,15 +91,15 @@ import com.rpfcoding.echo_journal.journal.presentation.util.getMoodColors
 import com.rpfcoding.echo_journal.journal.presentation.util.getResIdByMood
 import com.rpfcoding.echo_journal.journal.presentation.util.hasRecordAudioPermission
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDateTime
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.minutes
 
 @Composable
 fun JournalListScreenRoot(
     onNavigateToCreateJournal: (id: String, fileUri: String) -> Unit,
     onNavigateToSettings: () -> Unit,
-    viewModel: JournalListViewModel = koinViewModel()
+    viewModel: JournalListViewModel
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -604,8 +604,7 @@ private fun JournalListScreenPreview() {
             mutableStateOf(
                 JournalListState(
                     dateToJournalsMap = journals,
-                    hasStartedRecording = true,
-                    isAlternativeRecordingType = true
+                    hasStartedRecording = false
                 )
             )
         }
@@ -704,7 +703,7 @@ private fun dummyJournal(
         title = "My Entry",
         description = LoremIpsum(wordCount).values.joinToString(" "),
         recordingUri = "",
-        maxPlaybackInSeconds = 0,
+        maxPlaybackInSeconds = 4.minutes.inWholeSeconds,
         dateTimeCreated = dateTime ?: LocalDateTime.now().plusDays(-randomDays),
         topics = topics
     )

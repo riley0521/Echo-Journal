@@ -11,7 +11,9 @@ An android application for making journal with your voice.
 - [Splash Screen API](https://developer.android.com/develop/ui/views/launch/splash-screen#getting-started) - Splash screen that supports Android 12 and above.
 - [Koin](https://insert-koin.io/docs/setup/koin) - Dependency Injection.
 - [Kotlinx Serialization](https://kotlinlang.org/docs/serialization.html#example-json-serialization) - For converting JSON to data class and vice-versa.
-- [Room](https://developer.android.com/training/data-storage/room) - For storing data locally.
+- [Room](https://developer.android.com/training/data-storage/room) - SQLite wrapper with better compilation and coroutines support.
+- [Datastore Preference](https://developer.android.com/topic/libraries/architecture/datastore) - To store user preference.
+- [Jetpack Glance](https://developer.android.com/develop/ui/compose/glance/setup) - To create widget with jetpack compose.
 
 
 ## Features

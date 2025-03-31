@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.bundles.compose)
     implementation(libs.androidx.navigation)
     debugImplementation(libs.bundles.compose.debug)
+    implementation(libs.androidx.glance.appwidget)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.bundles.koin)
