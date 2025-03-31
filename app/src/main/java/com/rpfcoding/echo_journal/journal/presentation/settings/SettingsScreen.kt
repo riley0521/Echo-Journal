@@ -217,8 +217,9 @@ private fun SettingsScreenPreview() {
         SettingsScreen(
             state = SettingsState(
                 isTopicFieldFocused = true,
-                unselectedTopics = setOf("Java", "Jack", "Janitor"),
-                selectedTopics = setOf("Work", "Conundrums")
+                unselectedTopics = setOf(),
+                selectedTopics = setOf("Work", "Random"),
+                selectedMood = Mood.NEUTRAL
             ),
             onAction = {}
         )
