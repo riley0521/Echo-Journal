@@ -32,7 +32,7 @@ An android application for making journal with your voice.
 
 ### Journal settings
 - Set the default mood AND topic/s automatically after the user is done recording.
-- ![Journal settings screen](https://github.com/riley0521/Echo-Journal/blob/master/screenshots/Journal-Settings.png)
+- ![Journal settings screen](https://github.com/riley0521/Echo-Journal/blob/master/screenshots/Journal-Settings-2.png)
 
 ### Journal widget
 - If we use the widget, it will automatically start recording if user has granted the RECORD_AUDIO permission.
