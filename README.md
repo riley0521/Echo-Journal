@@ -23,10 +23,12 @@ An android application for making journal with your voice.
 ### List of journal
 - Display all audio log entry with their mood, sorted by date.
 - Can be filtered by selected mood & topic.
+- ![Journal list screen](https://github.com/riley0521/Echo-Journal/blob/master/screenshots/Journals-List.png)
 
 ### Create journal
 - Add entry title, description, and mood for that entry.
 - Append existing topic/s or create new topic/s.
+- ![Create journal screen](https://github.com/riley0521/Echo-Journal/blob/master/screenshots/Create-Journal.png)
 
 
 ## License
