@@ -1,14 +1,17 @@
 package com.rpfcoding.echo_journal.journal.presentation.widget
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -19,6 +22,7 @@ import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import com.rpfcoding.echo_journal.MainActivity
 import com.rpfcoding.echo_journal.R
 import com.rpfcoding.echo_journal.core.presentation.designsystem.EchoJournalTheme
 import com.rpfcoding.echo_journal.core.presentation.designsystem.WidgetBackgroundColor
@@ -32,7 +36,14 @@ object CreateJournalWidget: GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxSize()
                         .background(WidgetBackgroundColor)
-                        .padding(16.dp),
+                        .padding(16.dp)
+                        .clickable(
+                            actionStartActivity(
+                                intent = Intent(context, MainActivity::class.java).apply {
+                                    action = "com.rpfcoding.echo_journal.CREATE_JOURNAL"
+                                }
+                            )
+                        ),
                     horizontalAlignment = Alignment.End
                 ) {
                     Image(
